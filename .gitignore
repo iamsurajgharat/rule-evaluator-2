@@ -15,3 +15,9 @@ server.pid
 /dist/
 .cache
 rule-evaluator-2/.*
+rule-evaluator-2/app/antlr4/.antlr/*
+.metals/metals.lock.db
+.metals/metals.log
+.metals/metals.mv.db
+rule-evaluator-2/project/.bloop/*
+rule-evaluator-2/project/project/.bloop/*
