@@ -21,3 +21,9 @@ rule-evaluator-2/app/antlr4/.antlr/*
 .metals/metals.mv.db
 rule-evaluator-2/project/.bloop/*
 rule-evaluator-2/project/project/.bloop/*
+rule-evaluator-2/project/project/project/project/target/*
+rule-evaluator-2/project/project/project/target/*
+rule-evaluator-2/project/project/target/*
+rule-evaluator-2/project/target/*
+rule-evaluator-2/target/*
+rule-evaluator-2/logs/application.log
