@@ -12,6 +12,12 @@ libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "5.0.0
 libraryDependencies += "io.github.iamsurajgharat" %% "expression-tree" % "1.0.1"
 libraryDependencies += "dev.zio" %% "zio" % "1.0.12"
 
+val AkkaVersion = "2.6.18"
+libraryDependencies += "com.typesafe.akka" %% "akka-actor" % AkkaVersion
+libraryDependencies += "com.typesafe.akka" %% "akka-cluster-sharding-typed" % AkkaVersion
+libraryDependencies += "com.typesafe.akka" %% "akka-persistence-typed" % AkkaVersion
+
+
 // Adds additional packages into Twirl
 //TwirlKeys.templateImports += "com.surajgharat.controllers._"
 
