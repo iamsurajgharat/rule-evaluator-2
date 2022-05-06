@@ -21,12 +21,12 @@ object RuleActor {
     // evaluate against rules
     // delete rules
 
-    sealed trait Command extends CborSerializable
+    sealed trait Command
     final case class SaveRules(rules:List[Rule], replyTo:ActorRef[SavingRules]) extends Command
     final case class GetRules(ids:List[String], replyTo:ActorRef[RequestedRules]) extends Command
 
     // responses
-    final case class SavingRules(id:List[String])
+    final case class SavingRules(status:Map[String,Either[String,Unit]])
     final case class RequestedRules(data:List[Rule])
 
     // events
@@ -50,7 +50,8 @@ object RuleActor {
                 replyTo ! RequestedRules(state.getRulesDTO())
                 Effect.none
             case SaveRules(rules, replyTo) => 
-                Effect.persist(SavedRules(rules.map(getSavedRule).toList))
+                Effect.persist(SavedRules(rules.map(getSavedRule).toList)).
+                thenReply(replyTo)(st => SavingRules(rules.map(x => x.id -> Right(())).toMap))
         }
     }
 
