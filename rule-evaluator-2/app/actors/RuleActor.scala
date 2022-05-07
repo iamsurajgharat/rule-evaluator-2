@@ -22,11 +22,11 @@ object RuleActor {
     // delete rules
 
     sealed trait Command
-    final case class SaveRules(rules:List[Rule], replyTo:ActorRef[SavingRules]) extends Command
+    final case class SaveShardRulesRequest(rules:List[Rule], replyTo:ActorRef[SaveShardRulesResponse]) extends Command
     final case class GetRules(ids:List[String], replyTo:ActorRef[RequestedRules]) extends Command
 
     // responses
-    final case class SavingRules(status:Map[String,Either[String,Unit]])
+    final case class SaveShardRulesResponse(status:Map[String,Either[String,Unit]])
     final case class RequestedRules(data:List[Rule])
 
     // events
@@ -36,7 +36,7 @@ object RuleActor {
     // state
     final case class RuleActorData(private val rules:Map[String,BRule]){
         def saveRules(newRules:List[BRule]) : RuleActorData = {
-            ???
+            this
         }
 
         def getRulesDTO():List[Rule] = {
@@ -49,9 +49,10 @@ object RuleActor {
             case GetRules(ids, replyTo) => 
                 replyTo ! RequestedRules(state.getRulesDTO())
                 Effect.none
-            case SaveRules(rules, replyTo) => 
+            case SaveShardRulesRequest(rules, replyTo) => 
+                println(Console.BLUE + "Received msg in rule actor " + Console.RESET)
                 Effect.persist(SavedRules(rules.map(getSavedRule).toList)).
-                thenReply(replyTo)(st => SavingRules(rules.map(x => x.id -> Right(())).toMap))
+                thenReply(replyTo)(st => SaveShardRulesResponse(rules.map(x => x.id -> Right(())).toMap))
         }
     }
 

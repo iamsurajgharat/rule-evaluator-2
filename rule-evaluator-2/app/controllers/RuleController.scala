@@ -43,7 +43,7 @@ class RuleController @Inject() (private val ruleService:RuleService, val control
         },
         result => {
           println(Console.RED + "Passed!!!" + Console.RESET)
-          Ok("")
+          Ok(Json.toJson(result))
         }
       )
     }

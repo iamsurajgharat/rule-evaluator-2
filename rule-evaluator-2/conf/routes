@@ -4,7 +4,6 @@
 # ~~~~
 
 # An example controller showing a sample home page
-GET     /                           io.github.iamsurajgharat.ruleevaluator.controllers.HomeController.index()
 POST    /api/rules                  io.github.iamsurajgharat.ruleevaluator.controllers.RuleController.saveRules()
 
 
