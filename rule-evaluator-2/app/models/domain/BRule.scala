@@ -6,3 +6,5 @@ import io.github.iamsurajgharat.ruleevaluator.models.web.Rule
 import io.github.iamsurajgharat.expressiontree.expressiontree.CExpressionImpl
 
 class BRule(val rule:Rule, val compiledRule:CExpressionImpl[Boolean])
+
+case class EvalResult(isSucess:Boolean, result:String, error:String)

@@ -19,6 +19,8 @@ import org.antlr.v4.runtime.ANTLRInputStream
 import io.github.iamsurajgharat.ruleevaluator.antlr4.RuleLexer
 import org.antlr.v4.runtime.CommonTokenStream
 import io.github.iamsurajgharat.ruleevaluator.antlr4.RuleParser
+import io.github.iamsurajgharat.expressiontree.expressiontree.Record
+import io.github.iamsurajgharat.ruleevaluator.models.domain.EvalResult
 
 object RuleActor {
     // commands
@@ -32,11 +34,13 @@ object RuleActor {
     final case class GetShardRulesRequest(ids:Set[String], replyTo:ActorRef[GetShardRulesResponse]) extends Command
     final case class SaveMetadataRequest(metadata:RuleMetadata, replyTo:ActorRef[GetMetadataResponse]) extends Command
     final case class GetMetadataRequest(replyTo:ActorRef[GetMetadataResponse]) extends Command
+    final case class EvaluateRulesRequest(records:List[Record], replyTo:ActorRef[EvaluateRulesResponse]) extends Command
 
     // responses
     final case class SaveShardRulesResponse(status:Map[String,Either[String,Unit]])
     final case class GetMetadataResponse(metadata:RuleMetadata)
     final case class GetShardRulesResponse(data:List[Rule])
+    final case class EvaluateRulesResponse(data:Map[String,EvalResult])
 
     // events
     sealed trait Event
@@ -53,19 +57,40 @@ object RuleActor {
         def getRulesDTO(ids:Set[String]) = ids.withFilter(rules.contains(_)).map(rules(_).rule).toList
     }
 
+    val TypeKey: EntityTypeKey[Command] = EntityTypeKey[Command]("Rule")
+
+    def apply(entityId: String, persistenceId: PersistenceId): Behavior[Command] = {
+        Behaviors.setup { context =>
+            context.log.info("Starting RuleActor {}", entityId)
+            EventSourcedBehavior(
+                persistenceId, 
+                emptyState = RuleActorData(new RuleVisitor(RuleMetadata.empty), Map.empty[String,BRule]), 
+                commandHandler, 
+                eventHandler
+            )
+        }
+    }
+
     private def commandHandler(state:RuleActorData, cmd:Command):Effect[Event, RuleActorData] = {
         cmd match {
             case GetShardRulesRequest(ids, replyTo) => 
-                Effect.none.thenReply(replyTo)(state => GetShardRulesResponse(state.getRulesDTO(ids)))
+                Effect
+                    .none
+                    .thenReply(replyTo)(state => GetShardRulesResponse(state.getRulesDTO(ids)))
 
             case SaveShardRulesRequest(rules, replyTo) => 
                 println(Console.BLUE + "Received msg in rule actor " + Console.RESET)
-                Effect.persist(SavedShardRules(rules.map(r => getSavedRule(r, state.visitor)).toList)).
-                thenReply(replyTo)(st => SaveShardRulesResponse(rules.map(x => x.id -> Right(())).toMap))
+                Effect
+                    .persist(SavedShardRules(rules.map(r => getSavedRule(r, state.visitor)).toList))
+                    .thenReply(replyTo)(st => SaveShardRulesResponse(rules.map(x => x.id -> Right(())).toMap))
 
             case SaveMetadataRequest(metadata, replyTo) => 
-                Effect.persist(SavedMetadata(state.visitor.metadata ++ metadata))
+                Effect
+                    .persist(SavedMetadata(state.visitor.metadata ++ metadata))
                     .thenReply(replyTo)(s => GetMetadataResponse(s.visitor.metadata))
+
+            case GetMetadataRequest(replyTo) => 
+                Effect.reply(replyTo)(GetMetadataResponse(state.visitor.metadata))
         }
     }
 
@@ -88,19 +113,5 @@ object RuleActor {
         val parser = new RuleParser(tokens)
         val tree = parser.expr()
         visitor.visit(tree)
-    }
-
-    val TypeKey: EntityTypeKey[Command] = EntityTypeKey[Command]("Rule")
-
-    def apply(entityId: String, persistenceId: PersistenceId): Behavior[Command] = {
-        Behaviors.setup { context =>
-            context.log.info("Starting RuleActor {}", entityId)
-            EventSourcedBehavior(
-                persistenceId, 
-                emptyState = RuleActorData(new RuleVisitor(RuleMetadata.empty), Map.empty[String,BRule]), 
-                commandHandler, 
-                eventHandler
-            )
-        }
     }
 }
