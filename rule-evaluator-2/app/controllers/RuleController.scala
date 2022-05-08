@@ -16,52 +16,63 @@ import zio.ZIO
 import io.github.iamsurajgharat.ruleevaluator._
 import io.github.iamsurajgharat.ruleevaluator.services.RuleService
 import scala.util.Try
+import zio.Task
 
 @Singleton
 class RuleController @Inject() (private val ruleService:RuleService, val controllerComponents: ControllerComponents)
     extends BaseController {
   import helpers.ZIOHelper._
   import models.web._
+
   def saveRules(): Action[JsValue] = zioActionWithBody(request => {
-    
-    def validateError(
+    request.body
+      .validate[List[Rule]]
+      .fold(validateError, req => validateSuccess(req, ruleService.saveRules))
+  })
+
+  def getRules() : Action[JsValue] = zioActionWithBody(request => {
+
+    request.body
+      .validate[Set[String]]
+      .fold(validateError, req => validateSuccess(req, ruleService.getRules))
+
+  })
+
+  def deleteRules() = ???
+  def evalute() = ???
+
+  def zioActionWithBody(actionFun: Request[JsValue] => UIO[Result]): Action[JsValue] = {
+    Action(parse.json) { request =>
+      ((interpret[Result] _) compose actionFun)(request)
+    }
+  }
+
+  private def validateError(
         errors: scala.collection.Seq[
           (JsPath, scala.collection.Seq[JsonValidationError])
         ]
-    ): UIO[Result] = {
+  ): UIO[Result] = {
       ZIO
         .fromTry(Try(Json.obj("errors" -> JsError.toJson(errors))))
         .orElse(ZIO.succeed(Json.obj("errors" -> "Error in parsing input")))
         .map(BadRequest(_))
     }
 
-    def validateSuccess(rules: List[Rule]): UIO[Result] = {
-      ruleService.saveRules(rules).fold(
-        errors => {
-          println(Console.RED + "Failed!!!" + Console.RESET)
-          InternalServerError(errors.getMessage())
-        },
-        result => {
-          println(Console.RED + "Passed!!!" + Console.RESET)
-          Ok(Json.toJson(result))
-        }
-      )
-    }
+  private def validateSuccess[T1,T2 <: BaseDTO](requestData: T1, handler:T1 => Task[T2]): UIO[Result] = {
+    handler(requestData).fold(
+      errors => {
+        println(Console.RED + "Failed!!!" + Console.RESET)
+        InternalServerError(errors.getMessage())
+      },
+      result => {
+        println(Console.GREEN + "Passed!!!" + Console.RESET)
+        Ok(toJson(result))
+      }
+    )
+  }
 
-    request.body
-      .validate[List[Rule]]
-      .fold(validateError, validateSuccess)
-  })
-
-  def getRules() = ???
-  def deleteRules() = ???
-  def evalute() = ???
-
-  def zioActionWithBody(
-      actionFun: Request[JsValue] => UIO[Result]
-  ): Action[JsValue] = {
-    Action(parse.json) { request =>
-      ((interpret[Result] _) compose actionFun)(request)
-    }
+  private def toJson[T <: BaseDTO](data : T) : JsValue = data match {
+        case req : SaveRulesResponseDTO => Json.toJson(req)
+        case res : GetRulesResponseDTO => Json.toJson(res)
   }
 }

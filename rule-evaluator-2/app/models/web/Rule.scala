@@ -10,8 +10,18 @@ object Rule {
     implicit val format = Json.format[Rule]
 }
 
-case class SaveRulesResponseDTO(successIds:List[String], errors:Map[String,String])
+sealed trait BaseDTO{
+    val num2:Int = 10
+}
+
+case class SaveRulesResponseDTO(successIds:List[String], errors:Map[String,String]) extends BaseDTO
 
 object SaveRulesResponseDTO {
     implicit val format = Json.format[SaveRulesResponseDTO]
+}
+
+case class GetRulesResponseDTO(data:List[Rule]) extends BaseDTO
+
+object GetRulesResponseDTO {
+    implicit val format = Json.format[GetRulesResponseDTO]
 }

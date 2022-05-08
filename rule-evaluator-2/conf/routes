@@ -5,6 +5,7 @@
 
 # An example controller showing a sample home page
 POST    /api/rules                  io.github.iamsurajgharat.ruleevaluator.controllers.RuleController.saveRules()
+POST    /api/rules/getbulk          io.github.iamsurajgharat.ruleevaluator.controllers.RuleController.getRules()
 
 
 # Map static resources from the /public folder to the /assets URL path

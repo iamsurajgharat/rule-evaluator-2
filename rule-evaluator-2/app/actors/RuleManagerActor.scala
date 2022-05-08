@@ -26,9 +26,11 @@ object RuleManagerActor extends ActorModule {
     }
 
     case class SaveRulesRequest(cmdId:String, rules:List[Rule], replyTo:ActorRef[SaveRulesResponse]) extends Command
+    case class GetRulesRequest(cmdId:String, ids:Set[String], replyTo:ActorRef[GetRulesResponse]) extends Command
 
     // responses
     case class SaveRulesResponse(sucessIds:List[String], errors:Map[String,String])
+    case class GetRulesResponse(data:List[Rule])
 
     // events
     sealed trait Event
@@ -53,12 +55,25 @@ object RuleManagerActor extends ActorModule {
                 val groups = rules.groupBy(r => getShardNumber(r.id)).toList
 
                 // Create actor to handle save-shard-rule responses from RuleActors
-                val cActor = context.spawn(saveShardRulesResponseBhr(replyTo, groups.length, Nil, Map.empty[String,String]), "SaveRulesResponse-"+cmdId)
+                val cActor = context.spawn(saveShardRulesResponseBhr(replyTo, groups.length, Nil, Map.empty[String,String]), "SaveShardRulesResponse-"+cmdId)
 
                 // send save request to multiple RuleActors as per shardId
                 groups.foreach(ruleGroup => {
                     val entityId = "shard-" + ruleGroup._1
                     var payload = RuleActor.SaveShardRulesRequest(ruleGroup._2, cActor)
+                    ruleActorshardRegion ! ShardingEnvelope(entityId, payload)
+                })
+
+            case GetRulesRequest(cmdId, ids, replyTo) => 
+                val groups = ids.groupBy(getShardNumber(_))
+
+                // Create actor to handle save-shard-rule responses from RuleActors
+                val cActor = context.spawn(getShardRulesResponseBhr(replyTo, groups.size, Nil), "GetShardRulesResponse-"+cmdId)
+
+                // send save request to multiple RuleActors as per shardId
+                groups.foreach(ruleGroup => {
+                    val entityId = "shard-" + ruleGroup._1
+                    var payload = RuleActor.GetShardRulesRequest(ruleGroup._2, cActor)
                     ruleActorshardRegion ! ShardingEnvelope(entityId, payload)
                 })
         }
@@ -83,6 +98,23 @@ object RuleManagerActor extends ActorModule {
             }
             else
                 saveShardRulesResponseBhr(replyTo, pendingReply -1, newSuccessIds, newErrorIds)
+
+    })
+
+    def getShardRulesResponseBhr(
+        replyTo:ActorRef[GetRulesResponse],
+        pendingReply:Int,
+        rules:List[Rule]
+    ) : Behavior[RuleActor.GetShardRulesResponse] = Behaviors.receive((context, message) => {
+            val mergedRules = message.data
+
+            // if all responses are received, send collected data to requester, and stop this actor
+            if(pendingReply <= 1){
+                replyTo ! GetRulesResponse(mergedRules)
+                Behaviors.stopped
+            }
+            else
+                getShardRulesResponseBhr(replyTo, pendingReply -1, mergedRules)
 
     })
 }
