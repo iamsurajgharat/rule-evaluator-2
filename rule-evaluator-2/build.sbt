@@ -26,3 +26,4 @@ libraryDependencies += clusterSharding
 // play.sbt.routes.RoutesKeys.routesImport += "com.surajgharat.binders._"
 
 antlr4PackageName in Antlr4 := Some("io.github.iamsurajgharat.ruleevaluator.antlr4")
+antlr4GenVisitor in Antlr4 := true // default: false

@@ -1,32 +1,27 @@
 grammar Rule;
-expr        :   TEXT                                        # textExpr
-            |   NUM                                         # numExpr
-            |   ('true' | 'false')                          # boolExpr
-            |   ID                                          # varExpr
-            |   expr opcode=('*' | '/' | '%') expr          # mulOrDivideOprExpr
-            |   expr opcode=('+' | '-') expr                # addOrSubOprExpr
-            |   ID'(' params? ')'                           # callFuncExpr
-            ;
-params      :   expr (',' expr)*
-            ;
-NUM         :   DIGIT+
-            |   DIGIT* '.' DIGIT+ 
-            ;
-ID          :   [a-zA-Z][a-zA-Z0-9]*
-            ;
-TEXT        :   '\'' ((ESC|.)*?) '\'' ;
-ADD         :   '+' ;
-SUB         :   '-' ;
-MUL         :   '*' ;
-DIVIDE      :   '/' ;
-MODULO      :   '%' ;
-
-fragment
-DIGIT       :   [0-9] ;
-
-fragment
-ESC         :   '\\\''
-            |   '\\\\'
-            ;
-
-WS          :   [ \t]+ -> skip ; // toss out whitespace
+expr    :   ID                                  # id
+        |   NUM                                 # num
+        |   TEXT                                # text
+        |   expr opcode=('*'|'/') expr          # mulOrDiv
+        |   expr opcode=('+'|'-') expr          # addOrSub
+        |   '-' expr                            # negate
+        |   func                                # callFunc
+        |   '(' expr ')'                        # bracket
+        ;
+func    :   ID'(' params ')'                    # callFuncWithArgs
+        |   ID'(' ')'                           # callFuncWithoutArgs
+        ;
+params  :   expr (',' expr )*
+        ;
+ID      :   [a-z][a-z0-9]+
+        ;
+NUM     :   [0-9]+
+        ;
+TEXT    :   '\''[.]*'\''
+        ;
+MUL     :   '*' ; 
+DIV     :   '/' ;
+ADD     :   '+' ;
+SUB     :   '-' ;
+WS      :   [\t]+ -> skip
+        ;
