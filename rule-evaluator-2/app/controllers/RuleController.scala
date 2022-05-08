@@ -29,17 +29,17 @@ class RuleController @Inject() (private val ruleService:RuleService, val control
           (JsPath, scala.collection.Seq[JsonValidationError])
         ]
     ): UIO[Result] = {
-      val validationError = ZIO
+      ZIO
         .fromTry(Try(Json.obj("errors" -> JsError.toJson(errors))))
         .orElse(ZIO.succeed(Json.obj("errors" -> "Error in parsing input")))
-      validationError.map(BadRequest(_))
+        .map(BadRequest(_))
     }
 
     def validateSuccess(rules: List[Rule]): UIO[Result] = {
       ruleService.saveRules(rules).fold(
         errors => {
           println(Console.RED + "Failed!!!" + Console.RESET)
-          InternalServerError("Error-ABCD")
+          InternalServerError(errors.getMessage())
         },
         result => {
           println(Console.RED + "Passed!!!" + Console.RESET)

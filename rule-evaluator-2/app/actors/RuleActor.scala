@@ -23,42 +23,40 @@ object RuleActor {
 
     sealed trait Command
     final case class SaveShardRulesRequest(rules:List[Rule], replyTo:ActorRef[SaveShardRulesResponse]) extends Command
-    final case class GetRules(ids:List[String], replyTo:ActorRef[RequestedRules]) extends Command
+    final case class GetShardRulesRequest(ids:Set[String], replyTo:ActorRef[GetShardRulesResponse]) extends Command
 
     // responses
     final case class SaveShardRulesResponse(status:Map[String,Either[String,Unit]])
-    final case class RequestedRules(data:List[Rule])
+    final case class GetShardRulesResponse(data:List[Rule])
 
     // events
     sealed trait Event
-    final case class SavedRules(rules:List[SRule]) extends Event
+    final case class SavedShardRules(rules:List[SRule]) extends Event
 
     // state
     final case class RuleActorData(private val rules:Map[String,BRule]){
         def saveRules(newRules:List[BRule]) : RuleActorData = {
-            this
+            val mergedRules = rules ++ newRules.map(x => x.rule.id -> x).toMap
+            copy(rules = mergedRules)
         }
 
-        def getRulesDTO():List[Rule] = {
-            rules.map(x => x._2.rule).toList
-        }
+        def getRulesDTO(ids:Set[String]) = ids.withFilter(rules.contains(_)).map(rules(_).rule).toList
     }
 
     private def commandHandler(state:RuleActorData, cmd:Command):Effect[Event, RuleActorData] = {
         cmd match {
-            case GetRules(ids, replyTo) => 
-                replyTo ! RequestedRules(state.getRulesDTO())
-                Effect.none
+            case GetShardRulesRequest(ids, replyTo) => 
+                Effect.none.thenReply(replyTo)(state => GetShardRulesResponse(state.getRulesDTO(ids)))
             case SaveShardRulesRequest(rules, replyTo) => 
                 println(Console.BLUE + "Received msg in rule actor " + Console.RESET)
-                Effect.persist(SavedRules(rules.map(getSavedRule).toList)).
+                Effect.persist(SavedShardRules(rules.map(getSavedRule).toList)).
                 thenReply(replyTo)(st => SaveShardRulesResponse(rules.map(x => x.id -> Right(())).toMap))
         }
     }
 
     private def eventHandler(state:RuleActorData, evt:Event):RuleActorData = {
         evt match {
-            case SavedRules(rules) => state.saveRules(rules.map(getBRule).toList)
+            case SavedShardRules(rules) => state.saveRules(rules.map(getBRule).toList)
         }
     }
 
