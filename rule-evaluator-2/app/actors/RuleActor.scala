@@ -21,6 +21,11 @@ import org.antlr.v4.runtime.CommonTokenStream
 import io.github.iamsurajgharat.ruleevaluator.antlr4.RuleParser
 import io.github.iamsurajgharat.expressiontree.expressiontree.Record
 import io.github.iamsurajgharat.ruleevaluator.models.domain.EvalResult
+import io.github.iamsurajgharat.expressiontree.expressiontree.ExpressionRequest
+import io.github.iamsurajgharat.expressiontree.expressiontree.ExpressionContext
+import scala.util.Failure
+import scala.util.Success
+import io.github.iamsurajgharat.expressiontree.expressiontree.RText
 
 object RuleActor {
     // commands
@@ -40,7 +45,7 @@ object RuleActor {
     final case class SaveShardRulesResponse(status:Map[String,Either[String,Unit]])
     final case class GetMetadataResponse(metadata:RuleMetadata)
     final case class GetShardRulesResponse(data:List[Rule])
-    final case class EvaluateRulesResponse(data:Map[String,EvalResult])
+    final case class EvaluateRulesResponse(data:Map[String,List[EvalResult]])
 
     // events
     sealed trait Event
@@ -48,7 +53,7 @@ object RuleActor {
     final case class SavedMetadata(mdata:RuleMetadata) extends Event
 
     // state
-    final case class RuleActorData(val visitor: RuleVisitor, val rules:Map[String,BRule]){
+    final case class RuleActorData(val visitor: RuleVisitor, val expressionContext: ExpressionContext, val rules:Map[String,BRule]){
         def saveRules(newRules:List[BRule]) : RuleActorData = {
             val mergedRules = rules ++ newRules.map(x => x.rule.id -> x).toMap
             copy(rules = mergedRules)
@@ -64,7 +69,7 @@ object RuleActor {
             context.log.info("Starting RuleActor {}", entityId)
             EventSourcedBehavior(
                 persistenceId, 
-                emptyState = RuleActorData(new RuleVisitor(RuleMetadata.empty), Map.empty[String,BRule]), 
+                emptyState = RuleActorData(new RuleVisitor(RuleMetadata.empty), ExpressionContext(true), Map.empty[String,BRule]), 
                 commandHandler, 
                 eventHandler
             )
@@ -91,7 +96,33 @@ object RuleActor {
 
             case GetMetadataRequest(replyTo) => 
                 Effect.reply(replyTo)(GetMetadataResponse(state.visitor.metadata))
+
+            case EvaluateRulesRequest(records, replyTo) => 
+                Effect.reply(replyTo)(EvaluateRulesResponse(evaluate(state.expressionContext, records, state.rules)))
         }
+    }
+
+    private def evaluate(expContext:ExpressionContext, records:List[Record], rules:Map[String,BRule]) : Map[String,List[EvalResult]] = {
+        records.map(rec => getRecordId(rec) -> evaluate(expContext, rec, rules)).toMap
+    }
+
+    private def getRecordId(record: Record) : String = record.get[RText]("id") match {
+        case None => ""
+        case Some(value) => value.get()
+    }
+
+    private def evaluate(expContext:ExpressionContext, record:Record, rules:Map[String,BRule]) : List[EvalResult] = {
+        rules.map(rule => {
+            val result = rule._2.compiledRule.eval(ExpressionRequest(record, expContext))
+            result match {
+                case Failure(exception) => EvalResult(false, null, exception.getMessage())
+                case Success(value) => 
+                    value match {
+                        case None => EvalResult(false, null, "Null value")
+                        case Some(value) => if(value) EvalResult(true, rule._1, null) else null
+                    }
+            }
+        }).filterNot(_ == null).toList
     }
 
     private def eventHandler(state:RuleActorData, evt:Event):RuleActorData = {
