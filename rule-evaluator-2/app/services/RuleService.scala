@@ -13,12 +13,13 @@ import javax.inject.Inject
 import io.github.iamsurajgharat.ruleevaluator.models.web.GetRulesResponseDTO
 import io.github.iamsurajgharat.expressiontree.expressiontree.Record
 import io.github.iamsurajgharat.ruleevaluator.models.web.EvaluateRulesResponseDTO
+import io.github.iamsurajgharat.ruleevaluator.models.web.EvaluateRulesRequestDTO
 
 @ImplementedBy(classOf[RuleServiceImpl])
 trait RuleService {
     def saveRules(rules:List[Rule]):Task[SaveRulesResponseDTO]
     def getRules(ids: Set[String]): Task[GetRulesResponseDTO]
-    def evalRules(records: List[Record]): Task[EvaluateRulesResponseDTO]
+    def evalRules(request: EvaluateRulesRequestDTO): Task[EvaluateRulesResponseDTO]
 }
 
 class RuleServiceImpl @Inject()(
@@ -57,7 +58,7 @@ class RuleServiceImpl @Inject()(
     })
   }
 
-  override def evalRules(records: List[Record]): Task[EvaluateRulesResponseDTO] = {
+  override def evalRules(request: EvaluateRulesRequestDTO): Task[EvaluateRulesResponseDTO] = {
     evalReqCnt = evalReqCnt + 1;
 
     ZIO.fromFuture(implicit ec => {
@@ -66,7 +67,7 @@ class RuleServiceImpl @Inject()(
       implicit val timeout: Timeout = Timeout(3, TimeUnit.SECONDS)
 
       ruleManagerActor
-        .ask(replyTo => RuleManagerActor.EvaluateRulesRequest(evalReqCnt.toString(), records, replyTo))
+        .ask(replyTo => RuleManagerActor.EvaluateRulesRequest(evalReqCnt.toString(), request.context, request.records, replyTo))
         .map(x => EvaluateRulesResponseDTO(x.data))
     })
   }

@@ -39,12 +39,9 @@ class RuleController @Inject() (private val ruleService:RuleService, val control
   })
 
   def evalRules() : Action[JsValue] = zioActionWithBody(request => {
-
-    // request.body
-    //   .validate[EvaluateRulesRequestDTO]
-    //   .fold(validateError, req => validateSuccess(req, ruleService.getRules))
-    ???
-
+    request.body
+      .validate[EvaluateRulesRequestDTO]
+      .fold(validateError, req => validateSuccess(req, ruleService.evalRules))
   })
 
   def deleteRules() = ???

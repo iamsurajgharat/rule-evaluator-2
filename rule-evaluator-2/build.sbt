@@ -9,7 +9,7 @@ scalaVersion := "2.13.1"
 
 libraryDependencies += guice
 libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "5.0.0" % Test
-libraryDependencies += "io.github.iamsurajgharat" %% "expression-tree" % "1.0.1"
+libraryDependencies += "io.github.iamsurajgharat" %% "expression-tree" % "1.0.2"
 libraryDependencies += "dev.zio" %% "zio" % "1.0.12"
 
 val AkkaVersion = "2.6.18"

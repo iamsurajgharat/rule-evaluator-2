@@ -5,6 +5,7 @@ package actors
 import io.github.iamsurajgharat.ruleevaluator.models.store.SRule
 import akka.actor.typed.ActorRef
 import io.github.iamsurajgharat.ruleevaluator.models.web.Rule
+import io.github.iamsurajgharat.ruleevaluator.models.web.EvalConfig
 import io.github.iamsurajgharat.ruleevaluator.models.web.RuleMetadata
 import io.github.iamsurajgharat.ruleevaluator.models.domain.BRule
 import akka.persistence.typed.scaladsl.Effect
@@ -39,7 +40,7 @@ object RuleActor {
     final case class GetShardRulesRequest(ids:Set[String], replyTo:ActorRef[GetShardRulesResponse]) extends Command
     final case class SaveMetadataRequest(metadata:RuleMetadata, replyTo:ActorRef[GetMetadataResponse]) extends Command
     final case class GetMetadataRequest(replyTo:ActorRef[GetMetadataResponse]) extends Command
-    final case class EvaluateRulesRequest(records:List[Record], replyTo:ActorRef[EvaluateRulesResponse]) extends Command
+    final case class EvaluateRulesRequest(evalConfig: Option[EvalConfig], records:List[Record], replyTo:ActorRef[EvaluateRulesResponse]) extends Command
 
     // responses
     final case class SaveShardRulesResponse(status:Map[String,Either[String,Unit]])
@@ -97,7 +98,7 @@ object RuleActor {
             case GetMetadataRequest(replyTo) => 
                 Effect.reply(replyTo)(GetMetadataResponse(state.visitor.metadata))
 
-            case EvaluateRulesRequest(records, replyTo) => 
+            case EvaluateRulesRequest(evalConfig, records, replyTo) => 
                 Effect.reply(replyTo)(EvaluateRulesResponse(evaluate(state.expressionContext, records, state.rules)))
         }
     }

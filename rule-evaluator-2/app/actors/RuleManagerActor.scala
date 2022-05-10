@@ -20,6 +20,7 @@ import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import io.github.iamsurajgharat.ruleevaluator.models.web.RuleMetadata
 import io.github.iamsurajgharat.expressiontree.expressiontree.Record
 import io.github.iamsurajgharat.ruleevaluator.models.domain.EvalResult
+import io.github.iamsurajgharat.ruleevaluator.models.web.EvalConfig
 
 object RuleManagerActor extends ActorModule {
     type Message = Command
@@ -30,7 +31,7 @@ object RuleManagerActor extends ActorModule {
 
     case class SaveRulesRequest(cmdId:String, rules:List[Rule], replyTo:ActorRef[SaveRulesResponse]) extends Command
     case class SaveMetadataRequest(cmdId:String, metadata:RuleMetadata, replyTo:ActorRef[SaveMetadataResponse]) extends Command
-    case class EvaluateRulesRequest(cmdId:String, records:List[Record], replyTo:ActorRef[EvaluateRulesResponse]) extends Command
+    case class EvaluateRulesRequest(cmdId:String, evalConfig:Option[EvalConfig], records:List[Record], replyTo:ActorRef[EvaluateRulesResponse]) extends Command
     case class GetRulesRequest(cmdId:String, ids:Set[String], replyTo:ActorRef[GetRulesResponse]) extends Command
 
     // responses
@@ -94,12 +95,12 @@ object RuleManagerActor extends ActorModule {
                     ruleActorshardRegion ! ShardingEnvelope(entityId, payload)
                 }
 
-            case EvaluateRulesRequest(cmdId, records, replyTo) => 
+            case EvaluateRulesRequest(cmdId, evalConfig, records, replyTo) => 
                 // Create actor to handle save-shard-rule responses from RuleActors
                 val cActor = context.spawn(evaluateRulesResponseHandler(replyTo, confService.totalNumberOfShards, Map.empty), "EvaluateRuleResponse-"+cmdId)
                 for(shard <- 0 until confService.totalNumberOfShards) {
                     val entityId = "shard-" + shard
-                    var payload = RuleActor.EvaluateRulesRequest(records, cActor)
+                    var payload = RuleActor.EvaluateRulesRequest(evalConfig, records, cActor)
                     ruleActorshardRegion ! ShardingEnvelope(entityId, payload)
                 }
         }
