@@ -63,11 +63,26 @@ case class RuleMetadata(dataTypes:Map[String,DataType.DataType]) {
 
 object RuleMetadata {
     val empty = new RuleMetadata(Map.empty)
-    //implicit val format = Json.format[RuleMetadata]
+    implicit val ruleMetadataWrites = new Writes[RuleMetadata] {
+        def dataTypeToString(dt:DataType.DataType):String = {
+            dt.toString()
+        }
+
+        def writes(o: RuleMetadata): JsValue = {
+            val newMap = o.dataTypes.map(x => x._1 -> JsString(dataTypeToString(x._2)))
+            JsObject(Map.empty[String,JsValue]) + ("dataTypes", JsObject(newMap))
+        }
+    }
+
+    implicit val ruleMetadataReads = new Reads[RuleMetadata] {
+        def stringToDataType(str:String):DataType.DataType = {
+            DataType.withName(str)
+        }
+        def reads(json: JsValue): JsResult[RuleMetadata] = ???
+    }
 }
 
 sealed trait BaseDTO{
-    val num2:Int = 10
 }
 
 case class SaveRulesResponseDTO(successIds:List[String], errors:Map[String,String]) extends BaseDTO
@@ -100,4 +115,15 @@ case class EvaluateRulesResponseDTO(data:Map[String, List[EvalResult]]) extends 
 
 object EvaluateRulesResponseDTO {
     implicit val format = Json.format[EvaluateRulesResponseDTO]
+}
+
+case class SaveConfigAndMetadataRequestDTO(metadata:RuleMetadata) extends BaseDTO
+case class SaveConfigAndMetadataResponseDTO(metadata:RuleMetadata) extends BaseDTO
+
+object SaveConfigAndMetadataRequestDTO{
+    implicit val format = Json.format[SaveConfigAndMetadataRequestDTO]
+}
+
+object SaveConfigAndMetadataResponseDTO {
+    implicit val format = Json.format[SaveConfigAndMetadataResponseDTO]
 }

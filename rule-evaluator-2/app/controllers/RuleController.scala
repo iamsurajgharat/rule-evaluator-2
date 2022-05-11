@@ -30,6 +30,12 @@ class RuleController @Inject() (private val ruleService:RuleService, val control
       .fold(validateError, req => validateSuccess(req, ruleService.saveRules))
   })
 
+  def saveConfigAndMetadata(): Action[JsValue] = zioActionWithBody(request => {
+    request.body
+      .validate[SaveConfigAndMetadataRequestDTO]
+      .fold(validateError, req => validateSuccess(req, ruleService.saveConfigAndMetadata))
+  })
+
   def getRules() : Action[JsValue] = zioActionWithBody(request => {
 
     request.body
