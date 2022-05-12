@@ -78,7 +78,23 @@ object RuleMetadata {
         def stringToDataType(str:String):DataType.DataType = {
             DataType.withName(str)
         }
-        def reads(json: JsValue): JsResult[RuleMetadata] = ???
+        def reads(json: JsValue): JsResult[RuleMetadata] = {
+            json match {
+                case JsObject(underlying) => 
+                    val datTypes = underlying("dataTypes")
+                    datTypes match {
+                        case JsObject(underlying2) => 
+                            val res = underlying2
+                                .map(x => x._1 -> x._2.asInstanceOf[JsString])
+                                .map(x => x._1 -> stringToDataType(x._2.value)).toMap
+                            JsSuccess(RuleMetadata(res))
+                        case _ =>
+                            JsError("""Missing required property "dataTypes"""")
+                    }
+                case _ =>
+                    JsError("RuleMetadata has object structure")   
+            }
+        }
     }
 }
 

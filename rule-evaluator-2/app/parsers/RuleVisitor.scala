@@ -40,6 +40,12 @@ class RuleVisitor(val metadata : RuleMetadata) extends RuleBaseVisitor[SExpressi
         createBinaryOp(e1,e2,ctx.opcode.getType())
     }
 
+    override def visitComparison(ctx: ComparisonContext): SExpression = {
+        val e1 = visit(ctx.expr(0))
+        val e2 = visit(ctx.expr(1))
+        createBinaryOp(e1,e2,ctx.opcode.getType())
+    }
+
     // func call
     override def visitCallFuncWithArgs(ctx: RuleParser.CallFuncWithArgsContext): SExpression = {
         val attemp1 = ctx.ID().getText() match {
@@ -71,6 +77,8 @@ class RuleVisitor(val metadata : RuleMetadata) extends RuleBaseVisitor[SExpressi
             case RuleParser.DIV => SExpOpType.DivideOpr
             case RuleParser.ADD => SExpOpType.AddOpr
             case RuleParser.SUB => SExpOpType.SubtractOpr
+            case RuleParser.LT  => SExpOpType.LtOpr
+            case RuleParser.GT  => SExpOpType.GtOpr
         }
         SExpression.operation(opr, e1, e2)
     }

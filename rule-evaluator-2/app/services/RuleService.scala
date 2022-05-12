@@ -56,6 +56,8 @@ class RuleServiceImpl @Inject()(
       import akka.util.Timeout
       implicit val timeout: Timeout = Timeout(3, TimeUnit.SECONDS)
 
+      println("Sending save-metadata msg to manager")
+
       ruleManagerActor
         .ask(replyTo => RuleManagerActor.SaveMetadataRequest(saveMetaReqCnt.toString(), request.metadata, replyTo))
         .map(r => SaveConfigAndMetadataResponseDTO(r.metadata))

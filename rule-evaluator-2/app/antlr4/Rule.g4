@@ -4,6 +4,7 @@ expr    :   ID                                  # id
         |   TEXT                                # text
         |   expr opcode=('*'|'/') expr          # mulOrDiv
         |   expr opcode=('+'|'-') expr          # addOrSub
+        |   expr opcode=('>'|'<') expr          # comparison
         |   '-' expr                            # negate
         |   func                                # callFunc
         |   '(' expr ')'                        # bracket
@@ -23,5 +24,7 @@ MUL     :   '*' ;
 DIV     :   '/' ;
 ADD     :   '+' ;
 SUB     :   '-' ;
+LT      :   '<' ;
+GT      :   '>' ;
 WS      :   [\t]+ -> skip
         ;

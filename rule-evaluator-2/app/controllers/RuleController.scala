@@ -86,5 +86,6 @@ class RuleController @Inject() (private val ruleService:RuleService, val control
   private def toJson[T <: BaseDTO](data : T) : JsValue = data match {
         case req : SaveRulesResponseDTO => Json.toJson(req)
         case res : GetRulesResponseDTO => Json.toJson(res)
+        case res : SaveConfigAndMetadataResponseDTO => Json.toJson(res)
   }
 }
