@@ -1,24 +1,28 @@
 grammar Rule;
-expr    :   ID                                  # id
-        |   NUM                                 # num
-        |   TEXT                                # text
-        |   expr opcode=('*'|'/') expr          # mulOrDiv
-        |   expr opcode=('+'|'-') expr          # addOrSub
-        |   expr opcode=('>'|'<') expr          # comparison
-        |   '-' expr                            # negate
-        |   func                                # callFunc
-        |   '(' expr ')'                        # bracket
+expr    :   BOOL                                                # bool
+        |   NUM                                                 # num
+        |   TEXT                                                # text
+        |   ID                                                  # id
+        |   expr opcode=('*'|'/'|'%') expr                      # mulOrDiv
+        |   expr opcode=('+'|'-') expr                          # addOrSub
+        |   expr opcode=('>'|'<'|'<='|'>=') expr                # comparison
+        |   '-' expr                                            # negate
+        |   func                                                # callFunc
+        |   '(' expr ')'                                        # bracket
         ;
-func    :   ID'(' params ')'                    # callFuncWithArgs
-        |   ID'(' ')'                           # callFuncWithoutArgs
+func    :   ID'(' params ')'                                    # callFuncWithArgs
+        |   ID'(' ')'                                           # callFuncWithoutArgs
         ;
 params  :   expr (',' expr )*
         ;
-ID      :   [a-z][a-z0-9]+
+BOOL    :   'true'
+        |   'false'
+        ;
+TEXT    :   '\''.*?'\''
+        ;
+ID      :   [a-zA-Z][a-zA-Z0-9]*
         ;
 NUM     :   [0-9]+
-        ;
-TEXT    :   '\''[.]*'\''
         ;
 MUL     :   '*' ; 
 DIV     :   '/' ;
@@ -26,5 +30,5 @@ ADD     :   '+' ;
 SUB     :   '-' ;
 LT      :   '<' ;
 GT      :   '>' ;
-WS      :   [\t]+ -> skip
+WS      :   [ \t\r\n]+ -> skip
         ;

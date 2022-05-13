@@ -27,6 +27,13 @@ class RuleVisitor(val metadata : RuleMetadata) extends RuleBaseVisitor[SExpressi
         SExpression.constant(x.getText())
     }
 
+    override def visitBool(ctx: BoolContext): SExpression = {
+        ctx.getText() match {
+            case "true" => SExpression.constant(true)
+            case "false" => SExpression.constant(false)
+        }
+    }
+
     // Binary operations
     override def visitMulOrDiv(ctx: RuleParser.MulOrDivContext): SExpression = {
         val e1 = visit(ctx.expr(0))
