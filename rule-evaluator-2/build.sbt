@@ -17,6 +17,8 @@ libraryDependencies += "com.typesafe.akka" %% "akka-actor" % AkkaVersion
 libraryDependencies += "com.typesafe.akka" %% "akka-cluster-sharding-typed" % AkkaVersion
 libraryDependencies += "com.typesafe.akka" %% "akka-persistence-typed" % AkkaVersion
 libraryDependencies += clusterSharding
+libraryDependencies += "org.mockito" %% "mockito-scala" % "1.17.5"
+
 
 
 // Adds additional packages into Twirl
