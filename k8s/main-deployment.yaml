@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rule-eval-main-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: rule-eval-main
+  template:
+    metadata:
+      labels:
+        component: rule-eval-main
+    spec:
+      containers:
+        - name: rule-eval-main
+          image: surajgharat/rule-eval-main-service:2
+          ports:
+            - containerPort: 9000
+          env:
+            - name: APPLICATION_SECRET
+              value: 'abcdefghijklmnopqrstuvwxyz'

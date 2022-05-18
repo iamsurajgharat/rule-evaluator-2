@@ -24,6 +24,10 @@ class RuleController @Inject() (private val ruleService:RuleService, val control
   import helpers.ZIOHelper._
   import models.web._
 
+  def greet() = Action { _ =>
+    Ok("Hello from Rule Evaluator!")
+  }
+
   def saveRules(): Action[JsValue] = zioActionWithBody(request => {
     request.body
       .validate[List[Rule]]

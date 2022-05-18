@@ -3,7 +3,10 @@ organization := "com.surajgharat"
 
 version := "1.0-SNAPSHOT"
 
-lazy val root = (project in file(".")).enablePlugins(PlayScala).enablePlugins(Antlr4Plugin)
+lazy val root = (project in file("."))
+    .enablePlugins(PlayScala)
+    .enablePlugins(Antlr4Plugin)
+    .enablePlugins(AshScriptPlugin)
 
 scalaVersion := "2.13.1"
 
@@ -29,3 +32,17 @@ libraryDependencies += "org.mockito" %% "mockito-scala" % "1.17.5"
 
 antlr4PackageName in Antlr4 := Some("io.github.iamsurajgharat.ruleevaluator.antlr4")
 antlr4GenVisitor in Antlr4 := true // default: false
+
+import com.typesafe.sbt.packager.docker.DockerChmodType
+import com.typesafe.sbt.packager.docker.DockerPermissionStrategy
+dockerChmodType := DockerChmodType.UserGroupWriteExecute
+dockerPermissionStrategy := DockerPermissionStrategy.CopyChown
+
+Docker / maintainer := "mr.surajgharat2@gmail.com"
+Docker / packageName := "surajgharat/rule-eval-main-service"
+Docker / version := sys.env.getOrElse("BUILD_NUMBER", "2")
+Docker / daemonUserUid := None
+Docker / daemonUser := "daemon"
+dockerExposedPorts := Seq(9000)
+dockerBaseImage := "openjdk:8-jre-alpine"
+dockerUpdateLatest := true

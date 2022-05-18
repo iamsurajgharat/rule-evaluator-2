@@ -5,6 +5,7 @@
 
 # An example controller showing a sample home page
 POST    /api/rules                          io.github.iamsurajgharat.ruleevaluator.controllers.RuleController.saveRules()
+GET    /api/greet                          io.github.iamsurajgharat.ruleevaluator.controllers.RuleController.greet()
 POST    /api/rules/getbulk                  io.github.iamsurajgharat.ruleevaluator.controllers.RuleController.getRules()
 POST    /api/rules/eval                     io.github.iamsurajgharat.ruleevaluator.controllers.RuleController.evalRules()
 POST    /api/rules/metadata                 io.github.iamsurajgharat.ruleevaluator.controllers.RuleController.saveConfigAndMetadata()

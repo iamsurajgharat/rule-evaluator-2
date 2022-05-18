@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: rule-eval-main-node-port-service
+spec:
+  type: NodePort
+  selector:
+    component: rule-eval-main
+  ports:
+    - port: 9000
