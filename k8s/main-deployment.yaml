@@ -14,7 +14,8 @@ spec:
     spec:
       containers:
         - name: rule-eval-main
-          image: surajgharat/rule-eval-main-service:2
+          image: surajgharat/rule-eval-main-service:3
+          imagePullPolicy: Never
           ports:
             - containerPort: 9000
           env:

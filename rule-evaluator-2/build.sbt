@@ -40,9 +40,9 @@ dockerPermissionStrategy := DockerPermissionStrategy.CopyChown
 
 Docker / maintainer := "mr.surajgharat2@gmail.com"
 Docker / packageName := "surajgharat/rule-eval-main-service"
-Docker / version := sys.env.getOrElse("BUILD_NUMBER", "2")
+Docker / version := sys.env.getOrElse("BUILD_NUMBER", "3")
 Docker / daemonUserUid := None
 Docker / daemonUser := "daemon"
 dockerExposedPorts := Seq(9000)
-dockerBaseImage := "openjdk:8-jre-alpine"
+dockerBaseImage := "openjdk:11.0.15-oracle"
 dockerUpdateLatest := true
