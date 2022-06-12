@@ -28,6 +28,8 @@ import scala.util.Failure
 import scala.util.Success
 import io.github.iamsurajgharat.expressiontree.expressiontree.RText
 
+trait MySerializable
+
 object RuleActor {
     // commands
     // save-rules
@@ -35,7 +37,9 @@ object RuleActor {
     // evaluate against rules
     // delete rules
 
-    sealed trait Command
+
+
+    sealed trait Command extends MySerializable
     final case class SaveShardRulesRequest(rules:List[Rule], replyTo:ActorRef[SaveShardRulesResponse]) extends Command
     final case class GetShardRulesRequest(ids:Set[String], replyTo:ActorRef[GetShardRulesResponse]) extends Command
     final case class SaveMetadataRequest(metadata:RuleMetadata, replyTo:ActorRef[GetMetadataResponse]) extends Command
@@ -43,10 +47,10 @@ object RuleActor {
     final case class EvaluateRulesRequest(evalConfig: Option[EvalConfig], records:List[Record], replyTo:ActorRef[EvaluateRulesResponse]) extends Command
 
     // responses
-    final case class SaveShardRulesResponse(status:Map[String,Either[String,Unit]])
-    final case class GetMetadataResponse(metadata:RuleMetadata)
-    final case class GetShardRulesResponse(data:List[Rule])
-    final case class EvaluateRulesResponse(data:Map[String,List[EvalResult]])
+    final case class SaveShardRulesResponse(status:Map[String,Either[String,Unit]]) extends MySerializable
+    final case class GetMetadataResponse(metadata:RuleMetadata) extends MySerializable
+    final case class GetShardRulesResponse(data:List[Rule]) extends MySerializable
+    final case class EvaluateRulesResponse(data:Map[String,List[EvalResult]]) extends MySerializable
 
     // events
     sealed trait Event
@@ -91,6 +95,7 @@ object RuleActor {
                     .thenReply(replyTo)(st => SaveShardRulesResponse(rules.map(x => x.id -> Right(())).toMap))
 
             case SaveMetadataRequest(metadata, replyTo) => 
+                println(Console.BLUE + "Received msg in rule actor to save metadata " + Console.RESET)
                 Effect
                     .persist(SavedMetadata(state.visitor.metadata ++ metadata))
                     .thenReply(replyTo)(s => GetMetadataResponse(s.visitor.metadata))
@@ -99,6 +104,7 @@ object RuleActor {
                 Effect.reply(replyTo)(GetMetadataResponse(state.visitor.metadata))
 
             case EvaluateRulesRequest(evalConfig, records, replyTo) => 
+                println(Console.BLUE + s"Received msg in rule actor to evaluate rules ${records.length}/${state.rules.size} " + Console.RESET)
                 Effect.reply(replyTo)(EvaluateRulesResponse(evaluate(state.expressionContext, records, state.rules)))
         }
     }

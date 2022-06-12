@@ -98,8 +98,7 @@ object RuleMetadata {
     }
 }
 
-sealed trait BaseDTO{
-}
+sealed trait BaseDTO{}
 
 case class SaveRulesResponseDTO(successIds:List[String], errors:Map[String,String]) extends BaseDTO
 

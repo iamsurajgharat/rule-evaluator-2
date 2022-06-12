@@ -46,73 +46,81 @@ object RuleManagerActor extends ActorModule {
     @Provides
     def apply(confService:ConfService,
                 clusterSharding:ClusterSharding
-    ): Behavior[Command] = Behaviors.receive((context, message) => {
-
+    ): Behavior[Command] = {
+        
+        println(Console.BLUE + "Shard region init started" + Console.RESET)
         val TypeKey = EntityTypeKey[RuleActor.Command]("RuleActor")
         val ruleActorshardRegion: ActorRef[ShardingEnvelope[RuleActor.Command]] =
         clusterSharding.init(Entity(typeKey = RuleActor.TypeKey) { entityContext =>
             RuleActor(entityContext.entityId, PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId))
         })
-        
-        def getShardNumber(id:String) : Int = id.hashCode() % confService.totalNumberOfShards
 
-        message match {
-            case SaveRulesRequest(cmdId, rules, replyTo) => 
-                println(Console.BLUE + "Received msg in manager actor " + Console.RESET)
-                
-                val groups = rules.groupBy(r => getShardNumber(r.id)).toList
+        println(Console.BLUE + "Shard region init completed" + Console.RESET)
 
-                // Create actor to handle save-shard-rule responses from RuleActors
-                val cActor = context.spawn(saveShardRulesResponseBhr(replyTo, groups.length, Nil, Map.empty[String,String]), "SaveShardRulesResponse-"+cmdId)
+        Behaviors.receive((context, message) => {
 
-                // send save request to multiple RuleActors as per shardId
-                groups.foreach(ruleGroup => {
-                    val entityId = "shard-" + ruleGroup._1
-                    var payload = RuleActor.SaveShardRulesRequest(ruleGroup._2, cActor)
-                    ruleActorshardRegion ! ShardingEnvelope(entityId, payload)
-                })
+            def getShardNumber(id:String) : Int = id.hashCode() % confService.totalNumberOfShards
 
-            case GetRulesRequest(cmdId, ids, replyTo) => 
-                val groups = ids.groupBy(getShardNumber(_))
+            message match {
+                case SaveRulesRequest(cmdId, rules, replyTo) => 
+                    println(Console.BLUE + "Received msg in manager actor " + Console.RESET)
+                    
+                    val groups = rules.groupBy(r => getShardNumber(r.id)).toList
 
-                // Create actor to handle save-shard-rule responses from RuleActors
-                val cActor = context.spawn(getShardRulesResponseBhr(replyTo, groups.size, Nil), "GetShardRulesResponse-"+cmdId)
+                    // Create actor to handle save-shard-rule responses from RuleActors
+                    val cActor = context.spawn(saveShardRulesResponseBhr(replyTo, groups.length, Nil, Map.empty[String,String]), "SaveShardRulesResponse-"+cmdId)
 
-                // send save request to multiple RuleActors as per shardId
-                groups.foreach(ruleGroup => {
-                    val entityId = "shard-" + ruleGroup._1
-                    var payload = RuleActor.GetShardRulesRequest(ruleGroup._2, cActor)
-                    ruleActorshardRegion ! ShardingEnvelope(entityId, payload)
-                })
-                println("Made request to "+groups.size + " shard entities")
+                    // send save request to multiple RuleActors as per shardId
+                    groups.foreach(ruleGroup => {
+                        val entityId = "shard-" + ruleGroup._1
+                        var payload = RuleActor.SaveShardRulesRequest(ruleGroup._2, cActor)
+                        ruleActorshardRegion ! ShardingEnvelope(entityId, payload)
+                    })
 
-            case SaveMetadataRequest(cmdId, metadata, replyTo) => 
-                // Create actor to handle save-shard-rule responses from RuleActors
-                val cActor = context.spawn(saveMetadataResponseHandler(replyTo, confService.totalNumberOfShards), "SaveMetadataResponse-"+cmdId)
-                for(shard <- 0 until confService.totalNumberOfShards) {
-                    val entityId = "shard-" + shard
-                    var payload = RuleActor.SaveMetadataRequest(metadata, cActor)
-                    ruleActorshardRegion ! ShardingEnvelope(entityId, payload)
-                }
+                case GetRulesRequest(cmdId, ids, replyTo) => 
+                    val groups = ids.groupBy(getShardNumber(_))
 
-            case EvaluateRulesRequest(cmdId, evalConfig, records, replyTo) => 
-                // Create actor to handle save-shard-rule responses from RuleActors
-                val cActor = context.spawn(evaluateRulesResponseHandler(replyTo, confService.totalNumberOfShards, Map.empty), "EvaluateRuleResponse-"+cmdId)
-                for(shard <- 0 until confService.totalNumberOfShards) {
-                    val entityId = "shard-" + shard
-                    var payload = RuleActor.EvaluateRulesRequest(evalConfig, records, cActor)
-                    ruleActorshardRegion ! ShardingEnvelope(entityId, payload)
-                }
-        }
+                    // Create actor to handle save-shard-rule responses from RuleActors
+                    val cActor = context.spawn(getShardRulesResponseBhr(replyTo, groups.size, Nil), "GetShardRulesResponse-"+cmdId)
 
-        Behaviors.same
-    })
+                    // send save request to multiple RuleActors as per shardId
+                    groups.foreach(ruleGroup => {
+                        val entityId = "shard-" + ruleGroup._1
+                        var payload = RuleActor.GetShardRulesRequest(ruleGroup._2, cActor)
+                        ruleActorshardRegion ! ShardingEnvelope(entityId, payload)
+                    })
+                    println("Made request to "+groups.size + " shard entities")
+
+                case SaveMetadataRequest(cmdId, metadata, replyTo) => 
+                    println(Console.BLUE + "Received msg in manager actor to save metadata" + Console.RESET)
+                    // Create actor to handle save-shard-rule responses from RuleActors
+                    val cActor = context.spawn(saveMetadataResponseHandler(replyTo, confService.totalNumberOfShards), "SaveMetadataResponse-"+cmdId)
+                    for(shard <- 0 until confService.totalNumberOfShards) {
+                        val entityId = "shard-" + shard
+                        var payload = RuleActor.SaveMetadataRequest(metadata, cActor)
+                        ruleActorshardRegion ! ShardingEnvelope(entityId, payload)
+                    }
+
+                case EvaluateRulesRequest(cmdId, evalConfig, records, replyTo) => 
+                    // Create actor to handle save-shard-rule responses from RuleActors
+                    val cActor = context.spawn(evaluateRulesResponseHandler(replyTo, confService.totalNumberOfShards, Map.empty), "EvaluateRuleResponse-"+cmdId)
+                    for(shard <- 0 until confService.totalNumberOfShards) {
+                        val entityId = "shard-" + shard
+                        var payload = RuleActor.EvaluateRulesRequest(evalConfig, records, cActor)
+                        ruleActorshardRegion ! ShardingEnvelope(entityId, payload)
+                    }
+            }
+
+            Behaviors.same
+        })
+    }
 
     def evaluateRulesResponseHandler(
         replyTo:ActorRef[EvaluateRulesResponse],
         pendingReply:Int,
         response: Map[String, List[EvalResult]]
     ) : Behavior[RuleActor.EvaluateRulesResponse] = Behaviors.receive((context, message) => {
+            println(Console.BLUE + s"Received eval response :${pendingReply}" + Console.RESET)
             val newData = message.data.map(x => x._1 -> (if(response.contains(x._1)) response(x._1) ++ x._2 else x._2))
             val mergedResponse = response ++ newData
             // if all responses are received, send collected data to requester, and stop this actor

@@ -20,6 +20,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % AkkaVersion,
   "com.typesafe.akka" %% "akka-cluster-sharding-typed" % AkkaVersion,
   "com.typesafe.akka" %% "akka-persistence-typed" % AkkaVersion,
+  "com.typesafe.akka" %% "akka-serialization-jackson" % AkkaVersion,
   clusterSharding,
   "org.mockito" %% "mockito-scala" % "1.17.5",
   "com.typesafe.akka" %% "akka-discovery" % AkkaVersion,
@@ -48,7 +49,7 @@ dockerPermissionStrategy := DockerPermissionStrategy.CopyChown
 
 Docker / maintainer := "mr.surajgharat2@gmail.com"
 Docker / packageName := "surajgharat/rule-eval-main-service"
-Docker / version := sys.env.getOrElse("BUILD_NUMBER", "4")
+Docker / version := sys.env.getOrElse("BUILD_NUMBER", "6")
 Docker / daemonUserUid := None
 Docker / daemonUser := "daemon"
 dockerExposedPorts := Seq(9000)

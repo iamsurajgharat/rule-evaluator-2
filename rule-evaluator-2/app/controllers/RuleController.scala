@@ -55,7 +55,6 @@ class RuleController @Inject() (private val ruleService:RuleService, val control
   })
 
   def deleteRules() = ???
-  def evalute() = ???
 
   def zioActionWithBody(actionFun: Request[JsValue] => UIO[Result]): Action[JsValue] = {
     Action(parse.json) { request =>

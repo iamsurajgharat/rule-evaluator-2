@@ -6,15 +6,15 @@ spec:
   replicas: 2
   selector:
     matchLabels:
-      component: rule-eval-main
+      app: ruleevalactorsystem
   template:
     metadata:
       labels:
-        component: rule-eval-main
+        app: ruleevalactorsystem
     spec:
       containers:
         - name: ruleevalactorsystem
-          image: surajgharat/rule-eval-main-service:4
+          image: surajgharat/rule-eval-main-service:6
           readinessProbe:
             httpGet:
               path: /ready
