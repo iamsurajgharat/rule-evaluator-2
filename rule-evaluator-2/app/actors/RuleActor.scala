@@ -27,24 +27,64 @@ import io.github.iamsurajgharat.expressiontree.expressiontree.ExpressionContext
 import scala.util.Failure
 import scala.util.Success
 import io.github.iamsurajgharat.expressiontree.expressiontree.RText
+import play.api.libs.json.Json
+import play.api.libs.json.JsValue
+import play.api.libs.json.JsResult
+import play.api.libs.json.Writes
+import play.api.libs.json.Reads
+import play.api.libs.json.Format
+import play.api.libs.json.JsObject
+import akka.actor.typed.ActorRefResolver
+import play.api.libs.json.JsString
+import play.api.libs.json.JsSuccess
+import play.api.libs.json.JsError
 
 trait MySerializable
 
 object RuleActor {
     // commands
-    // save-rules
-    // get-rules
-    // evaluate against rules
-    // delete rules
-
-
-
     sealed trait Command extends MySerializable
     final case class SaveShardRulesRequest(rules:List[Rule], replyTo:ActorRef[SaveShardRulesResponse]) extends Command
     final case class GetShardRulesRequest(ids:Set[String], replyTo:ActorRef[GetShardRulesResponse]) extends Command
     final case class SaveMetadataRequest(metadata:RuleMetadata, replyTo:ActorRef[GetMetadataResponse]) extends Command
     final case class GetMetadataRequest(replyTo:ActorRef[GetMetadataResponse]) extends Command
     final case class EvaluateRulesRequest(evalConfig: Option[EvalConfig], records:List[Record], replyTo:ActorRef[EvaluateRulesResponse]) extends Command
+
+    // command objects
+    object EvaluateRulesRequest{
+        implicit val recordFormat = Format(Rule.recordReads, Rule.recordWrites)
+        def getWrites(actorRefResolver: ActorRefResolver):Writes[EvaluateRulesRequest] = new Writes[EvaluateRulesRequest] {
+            
+            def writes(obj: EvaluateRulesRequest) = {
+                val values = Map(
+                    "records" -> Json.toJson(obj.records),
+                    "replyTo" -> JsString(actorRefResolver.toSerializationFormat(obj.replyTo))
+                )
+                
+                if(obj.evalConfig == None) {
+                    JsObject(values)
+                }
+                else{
+                    JsObject(values + ("evalConfig" -> Json.toJson(obj.evalConfig.get)))
+                }
+            }
+        }
+
+        def getReads(actorRefResolver: ActorRefResolver):Reads[EvaluateRulesRequest] = new Reads[EvaluateRulesRequest] {
+            import EvalConfig.format
+            def reads(json: JsValue): JsResult[EvaluateRulesRequest] = {
+                json match {
+                    case JsObject(underlying) => 
+                        val evalConfig = if(underlying.contains("evalConfig")) Some(underlying("evalConfig").as[EvalConfig]) else None
+                        val records = underlying("records").as[List[Record]]
+                        val replyTo = actorRefResolver.resolveActorRef[EvaluateRulesResponse](underlying("replyTo").as[String])
+                        JsSuccess(EvaluateRulesRequest(evalConfig, records, replyTo))
+                    case _ => 
+                        JsError("Record must be JsObject")
+                }
+            }
+        }
+    }
 
     // responses
     final case class SaveShardRulesResponse(status:Map[String,Either[String,Unit]]) extends MySerializable
