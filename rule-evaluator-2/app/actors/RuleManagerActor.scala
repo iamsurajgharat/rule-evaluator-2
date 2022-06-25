@@ -59,7 +59,7 @@ object RuleManagerActor extends ActorModule {
 
         Behaviors.receive((context, message) => {
 
-            def getShardNumber(id:String) : Int = id.hashCode() % confService.totalNumberOfShards
+            def getShardNumber(id:String) : Int = Math.abs(id.hashCode()) % confService.totalNumberOfShards
 
             message match {
                 case SaveRulesRequest(cmdId, rules, replyTo) => 

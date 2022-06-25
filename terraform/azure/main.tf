@@ -20,7 +20,7 @@ resource "azurerm_container_registry" "acr" {
 # add image to the container registry
 resource "null_resource" "build-and-push-image" {
   provisioner "local-exec" {
-    command = "az acr build --image rule-eval-main-service:v6 --registry ${var.acr_name} --file ../../rule-evaluator-2/target/docker/stage/Dockerfile ../../rule-evaluator-2/target/docker/stage"
+    command = "az acr build --image rule-eval-main-service:v7 --registry ${var.acr_name} --file ../../rule-evaluator-2/target/docker/stage/Dockerfile ../../rule-evaluator-2/target/docker/stage"
   }
 
   depends_on = [azurerm_container_registry.acr]

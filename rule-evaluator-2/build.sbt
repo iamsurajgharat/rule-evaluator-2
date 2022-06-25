@@ -29,12 +29,6 @@ libraryDependencies ++= Seq(
   "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % AkkaManagementVersion
 )
 
-// Adds additional packages into Twirl
-//TwirlKeys.templateImports += "com.surajgharat.controllers._"
-
-// Adds additional packages into conf/routes
-// play.sbt.routes.RoutesKeys.routesImport += "com.surajgharat.binders._"
-
 antlr4PackageName in Antlr4 := Some(
   "io.github.iamsurajgharat.ruleevaluator.antlr4"
 )

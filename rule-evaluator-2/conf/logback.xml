@@ -33,7 +33,7 @@
 
   <logger name="play" level="INFO" />
   <logger name="application" level="DEBUG" />
-  <logger name="akka" level="DEBUG" />
+  <logger name="akka" level="WARN" />
 
   <root level="WARN">
     <appender-ref ref="ASYNCFILE" />
