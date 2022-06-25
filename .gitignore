@@ -29,3 +29,4 @@ rule-evaluator-2/target/*
 rule-evaluator-2/logs/application.log
 rule-evaluator-2/project/project/metals.sbt
 rule-evaluator-2/project/project/project/metals.sbt
+terraform/azure/.terraform/*

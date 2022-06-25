@@ -17,3 +17,8 @@ kubectl apply -f akka-cluster.yaml
 
 **Minikube - create main service deployment**
 kubectl apply -f main-deployment.yaml 
+
+### For local sbt run, uncomment below keys from application.conf
+akka.remote.artery.canonical.hostname
+akka.remote.artery.canonical.port
+akka.cluster.seed-nodes
