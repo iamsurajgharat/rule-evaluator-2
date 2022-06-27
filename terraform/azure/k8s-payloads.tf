@@ -4,7 +4,7 @@ resource "kubernetes_deployment_v1" "rule-eval-main-service-deployment" {
     }
 
     spec {
-        replicas = 2
+        replicas = 10
         selector {
             match_labels = {
                 app = "ruleevalactorsystem"
