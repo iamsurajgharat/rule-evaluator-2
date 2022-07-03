@@ -2,7 +2,6 @@ package io.github.iamsurajgharat
 package ruleevaluator
 package helpers
 
-import zio.UIO
 import zio.Task
 import scala.util.Success
 import scala.util.Failure

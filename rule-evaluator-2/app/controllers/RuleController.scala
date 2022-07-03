@@ -3,7 +3,6 @@ package ruleevaluator
 package controllers
 
 import javax.inject._
-import play.api._
 import play.api.mvc._
 import play.api.mvc.ControllerComponents
 import play.api.libs.json.JsValue
@@ -91,5 +90,6 @@ class RuleController @Inject() (private val ruleService:RuleService, val control
         case res : GetRulesResponseDTO => Json.toJson(res)
         case res : SaveConfigAndMetadataResponseDTO => Json.toJson(res)
         case res : EvaluateRulesResponseDTO => Json.toJson(res)
+        case _ => ???
   }
 }

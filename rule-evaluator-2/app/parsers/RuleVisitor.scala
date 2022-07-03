@@ -3,7 +3,6 @@ package ruleevaluator
 package parsers
 
 import io.github.iamsurajgharat.expressiontree.SExpression
-import io.github.iamsurajgharat.expressiontree.expressiontree.DataType
 import io.github.iamsurajgharat.expressiontree.SExpOpType
 import io.github.iamsurajgharat.ruleevaluator.antlr4.RuleParser
 import io.github.iamsurajgharat.ruleevaluator.antlr4.RuleParser._
@@ -69,7 +68,7 @@ class RuleVisitor(val metadata : RuleMetadata) extends RuleBaseVisitor[SExpressi
     }
 
     private def getParams(ctx:RuleParser.ParamsContext):List[SExpression] = {
-        import scala.collection.JavaConverters._
+        import scala.jdk.CollectionConverters._
         val (a1::an) = ctx.expr().asScala.toList
         val e1 = visit(a1)
         if(an.isEmpty) 

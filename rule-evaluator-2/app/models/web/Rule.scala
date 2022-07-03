@@ -3,7 +3,6 @@ package ruleevaluator
 package models.web
 
 import play.api.libs.json._
-import io.github.iamsurajgharat.expressiontree.SExpType
 import io.github.iamsurajgharat.expressiontree.expressiontree.DataType
 import io.github.iamsurajgharat.ruleevaluator.models.domain.EvalResult
 import io.github.iamsurajgharat.expressiontree.expressiontree.Record
@@ -121,7 +120,6 @@ object EvalConfig {
 case class EvaluateRulesRequestDTO(context:Option[EvalConfig], records:List[Record]) extends BaseDTO
 
 object EvaluateRulesRequestDTO {
-    import EvalConfig._
     import Rule._
     implicit val format = Json.format[EvaluateRulesRequestDTO]
 }

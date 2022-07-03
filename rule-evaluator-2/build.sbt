@@ -8,7 +8,7 @@ lazy val root = (project in file("."))
   .enablePlugins(Antlr4Plugin)
   .enablePlugins(AshScriptPlugin)
 
-scalaVersion := "2.13.1"
+scalaVersion := "2.13.8"
 val AkkaVersion = "2.6.18"
 val AkkaManagementVersion = "1.1.3"
 
@@ -26,12 +26,24 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-discovery" % AkkaVersion,
   "com.lightbend.akka.management" %% "akka-management-cluster-http" % AkkaManagementVersion,
   "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % AkkaManagementVersion,
-  "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % AkkaManagementVersion
+  "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % AkkaManagementVersion,
+  "com.github.dnvriend" %% "akka-persistence-jdbc" % "3.5.2",
+  "org.postgresql" % "postgresql" % "9.4-1206-jdbc42",
 )
 
-antlr4PackageName in Antlr4 := Some(
-  "io.github.iamsurajgharat.ruleevaluator.antlr4"
+scalacOptions ++= Seq(
+  "-Ywarn-unused",
+  "-deprecation"
 )
+
+inThisBuild(
+  List(
+    semanticdbEnabled := true,
+    semanticdbVersion := scalafixSemanticdb.revision
+  )
+)
+
+antlr4PackageName in Antlr4 := Some("io.github.iamsurajgharat.ruleevaluator.antlr4")
 antlr4GenVisitor in Antlr4 := true // default: false
 
 ThisBuild / dynverSeparator := "-"

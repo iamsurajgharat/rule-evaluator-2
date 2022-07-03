@@ -3,15 +3,11 @@ package ruleevaluator
 package actors
 
 import io.github.iamsurajgharat.ruleevaluator.models.web.Rule
-import akka.persistence.typed.scaladsl.Effect
 import io.github.iamsurajgharat.ruleevaluator.services.ConfService
 import akka.actor.typed.Behavior
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.actor.typed.ActorRef
-import java.util.concurrent.TimeUnit
-import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
-import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
 import akka.cluster.sharding.typed.scaladsl.Entity
 import akka.persistence.typed.PersistenceId
 import play.api.libs.concurrent.ActorModule
@@ -49,7 +45,7 @@ object RuleManagerActor extends ActorModule {
     ): Behavior[Command] = {
         
         println(Console.BLUE + "Shard region init started" + Console.RESET)
-        val TypeKey = EntityTypeKey[RuleActor.Command]("RuleActor")
+        //val TypeKey = EntityTypeKey[RuleActor.Command]("RuleActor")
         val ruleActorshardRegion: ActorRef[ShardingEnvelope[RuleActor.Command]] =
         clusterSharding.init(Entity(typeKey = RuleActor.TypeKey) { entityContext =>
             RuleActor(entityContext.entityId, PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId))
@@ -73,7 +69,7 @@ object RuleManagerActor extends ActorModule {
                     // send save request to multiple RuleActors as per shardId
                     groups.foreach(ruleGroup => {
                         val entityId = "shard-" + ruleGroup._1
-                        var payload = RuleActor.SaveShardRulesRequest(ruleGroup._2, cActor)
+                        val payload = RuleActor.SaveShardRulesRequest(ruleGroup._2, cActor)
                         ruleActorshardRegion ! ShardingEnvelope(entityId, payload)
                     })
 
@@ -86,7 +82,7 @@ object RuleManagerActor extends ActorModule {
                     // send save request to multiple RuleActors as per shardId
                     groups.foreach(ruleGroup => {
                         val entityId = "shard-" + ruleGroup._1
-                        var payload = RuleActor.GetShardRulesRequest(ruleGroup._2, cActor)
+                        val payload = RuleActor.GetShardRulesRequest(ruleGroup._2, cActor)
                         ruleActorshardRegion ! ShardingEnvelope(entityId, payload)
                     })
                     println("Made request to "+groups.size + " shard entities")
@@ -97,7 +93,7 @@ object RuleManagerActor extends ActorModule {
                     val cActor = context.spawn(saveMetadataResponseHandler(replyTo, confService.totalNumberOfShards), "SaveMetadataResponse-"+cmdId)
                     for(shard <- 0 until confService.totalNumberOfShards) {
                         val entityId = "shard-" + shard
-                        var payload = RuleActor.SaveMetadataRequest(metadata, cActor)
+                        val payload = RuleActor.SaveMetadataRequest(metadata, cActor)
                         ruleActorshardRegion ! ShardingEnvelope(entityId, payload)
                     }
 
@@ -106,7 +102,7 @@ object RuleManagerActor extends ActorModule {
                     val cActor = context.spawn(evaluateRulesResponseHandler(replyTo, confService.totalNumberOfShards, Map.empty), "EvaluateRuleResponse-"+cmdId)
                     for(shard <- 0 until confService.totalNumberOfShards) {
                         val entityId = "shard-" + shard
-                        var payload = RuleActor.EvaluateRulesRequest(evalConfig, records, cActor)
+                        val payload = RuleActor.EvaluateRulesRequest(evalConfig, records, cActor)
                         ruleActorshardRegion ! ShardingEnvelope(entityId, payload)
                     }
             }
@@ -119,7 +115,7 @@ object RuleManagerActor extends ActorModule {
         replyTo:ActorRef[EvaluateRulesResponse],
         pendingReply:Int,
         response: Map[String, List[EvalResult]]
-    ) : Behavior[RuleActor.EvaluateRulesResponse] = Behaviors.receive((context, message) => {
+    ) : Behavior[RuleActor.EvaluateRulesResponse] = Behaviors.receive((_, message) => {
             println(Console.BLUE + s"Received eval response :${pendingReply}" + Console.RESET)
             val newData = message.data.map(x => x._1 -> (if(response.contains(x._1)) response(x._1) ++ x._2 else x._2))
             val mergedResponse = response ++ newData
@@ -136,7 +132,7 @@ object RuleManagerActor extends ActorModule {
     def saveMetadataResponseHandler(
         replyTo:ActorRef[SaveMetadataResponse],
         pendingReply:Int
-    ) : Behavior[RuleActor.GetMetadataResponse] = Behaviors.receive((context, message) => {
+    ) : Behavior[RuleActor.GetMetadataResponse] = Behaviors.receive((_, message) => {
             // if all responses are received, send collected data to requester, and stop this actor
             if(pendingReply <= 1){
                 replyTo ! SaveMetadataResponse(message.metadata)
@@ -152,7 +148,7 @@ object RuleManagerActor extends ActorModule {
         pendingReply:Int,
         sucessIds:List[String],
         errorIds:Map[String,String]
-    ) : Behavior[RuleActor.SaveShardRulesResponse] = Behaviors.receive((context, message) => {
+    ) : Behavior[RuleActor.SaveShardRulesResponse] = Behaviors.receive((_, message) => {
             val (s, e) = message.status.partition(_._2.isRight)
             val newSuccessIds = sucessIds.concat(s.keySet).toList
             val newErrorIds = errorIds ++ e.map(x => x._1 -> x._2.left.toOption.get)
@@ -171,7 +167,7 @@ object RuleManagerActor extends ActorModule {
         replyTo:ActorRef[GetRulesResponse],
         pendingReply:Int,
         rules:List[Rule]
-    ) : Behavior[RuleActor.GetShardRulesResponse] = Behaviors.receive((context, message) => {
+    ) : Behavior[RuleActor.GetShardRulesResponse] = Behaviors.receive((_, message) => {
             val mergedRules = rules ++ message.data
 
             println("Received shard response!!")

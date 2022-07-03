@@ -3,30 +3,17 @@ package ruleevaluator
 package controllers
 
 import javax.inject._
-import play.api._
 import play.api.mvc._
 import play.api.mvc.ControllerComponents
-import play.api.libs.json.JsValue
-import play.api.libs.json.JsPath
-import play.api.libs.json.Json
-import play.api.libs.json.JsError
-import play.api.libs.json.JsonValidationError
-import zio.UIO
-import zio.ZIO
 import io.github.iamsurajgharat.ruleevaluator._
-import io.github.iamsurajgharat.ruleevaluator.services.RuleService
-import scala.util.Try
-import zio.Task
-import play.api.libs.json.Writes
 import io.github.iamsurajgharat.expressiontree.expressiontree.RecordImpl
 import io.github.iamsurajgharat.expressiontree.expressiontree.RText
-import play.api.libs.json.Format
 import io.github.iamsurajgharat.expressiontree.expressiontree.Record
+import play.api.libs.json.Json
 
 @Singleton
 class SampleGeneratorController @Inject() (val controllerComponents: ControllerComponents)
     extends BaseController {
-  import helpers.ZIOHelper._
   import models.web._
 
   def getSampleXYPayload(start:Int, count:Int) = Action { _ =>

@@ -7,7 +7,6 @@ import play.api.libs.json.Json
 import akka.actor.ExtendedActorSystem
 import akka.actor.typed.ActorRefResolver
 import akka.serialization.SerializerWithStringManifest
-import akka.actor.typed.ActorSystem
 import javax.inject.Inject
 import akka.actor.typed.scaladsl.adapter._
 

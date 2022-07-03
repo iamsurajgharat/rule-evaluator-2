@@ -16,7 +16,6 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
 import akka.persistence.typed.scaladsl.EventSourcedBehavior
 import io.github.iamsurajgharat.ruleevaluator.parsers.RuleVisitor
-import org.antlr.v4.runtime.ANTLRInputStream
 import io.github.iamsurajgharat.ruleevaluator.antlr4.RuleLexer
 import org.antlr.v4.runtime.CommonTokenStream
 import io.github.iamsurajgharat.ruleevaluator.antlr4.RuleParser
@@ -38,6 +37,7 @@ import akka.actor.typed.ActorRefResolver
 import play.api.libs.json.JsString
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsError
+import org.antlr.v4.runtime.CharStreams
 
 trait MySerializable
 
@@ -132,7 +132,7 @@ object RuleActor {
                 println(Console.BLUE + "Received msg in rule actor " + Console.RESET)
                 Effect
                     .persist(SavedShardRules(rules.map(r => getSavedRule(r, state.visitor)).toList))
-                    .thenReply(replyTo)(st => SaveShardRulesResponse(rules.map(x => x.id -> Right(())).toMap))
+                    .thenReply(replyTo)(_ => SaveShardRulesResponse(rules.map(x => x.id -> Right(())).toMap))
 
             case SaveMetadataRequest(metadata, replyTo) => 
                 println(Console.BLUE + "Received msg in rule actor to save metadata " + Console.RESET)
@@ -143,7 +143,7 @@ object RuleActor {
             case GetMetadataRequest(replyTo) => 
                 Effect.reply(replyTo)(GetMetadataResponse(state.visitor.metadata))
 
-            case EvaluateRulesRequest(evalConfig, records, replyTo) => 
+            case EvaluateRulesRequest(_, records, replyTo) => 
                 println(Console.BLUE + s"Received msg in rule actor to evaluate rules ${records.length}/${state.rules.size} " + Console.RESET)
                 Effect.reply(replyTo)(EvaluateRulesResponse(evaluate(state.expressionContext, records, state.rules)))
         }
@@ -185,7 +185,8 @@ object RuleActor {
     private def getBRule(srule:SRule):BRule = new BRule(srule.toRule(), srule.toCRule())
     
     private def getSExpression(expr:String, visitor: RuleVisitor):SExpression = {
-        val input = new ANTLRInputStream(expr)
+        val input = CharStreams.fromString(expr)
+        //val input = new ANTLRInputStream(expr)
         val lexer = new RuleLexer(input)
         val tokens = new CommonTokenStream(lexer)
         val parser = new RuleParser(tokens)

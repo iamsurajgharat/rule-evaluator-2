@@ -22,3 +22,6 @@ kubectl apply -f main-deployment.yaml
 akka.remote.artery.canonical.hostname
 akka.remote.artery.canonical.port
 akka.cluster.seed-nodes
+
+### Connect to local postgresql instance
+sudo -u postgres psql

@@ -11,7 +11,6 @@ import io.github.iamsurajgharat.ruleevaluator.actors.RuleManagerActor
 import io.github.iamsurajgharat.ruleevaluator.models.web.SaveRulesResponseDTO
 import javax.inject.Inject
 import io.github.iamsurajgharat.ruleevaluator.models.web.GetRulesResponseDTO
-import io.github.iamsurajgharat.expressiontree.expressiontree.Record
 import io.github.iamsurajgharat.ruleevaluator.models.web.EvaluateRulesResponseDTO
 import io.github.iamsurajgharat.ruleevaluator.models.web.EvaluateRulesRequestDTO
 import io.github.iamsurajgharat.ruleevaluator.models.web.SaveConfigAndMetadataRequestDTO
