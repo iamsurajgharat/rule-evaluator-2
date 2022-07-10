@@ -1,4 +1,4 @@
-name := """rule-evaluator-2"""
+name := "rule-evaluator-2"
 organization := "com.surajgharat"
 
 version := "1.0-SNAPSHOT"
@@ -13,27 +13,38 @@ val AkkaVersion = "2.6.18"
 val AkkaManagementVersion = "1.1.3"
 
 libraryDependencies ++= Seq(
-  guice,
   "io.github.iamsurajgharat" %% "expression-tree" % "1.0.2",
   "dev.zio" %% "zio" % "1.0.12",
-  "org.scalatestplus.play" %% "scalatestplus-play" % "5.0.0" % Test,
+
+  // akka
   "com.typesafe.akka" %% "akka-actor" % AkkaVersion,
+  clusterSharding,
   "com.typesafe.akka" %% "akka-cluster-sharding-typed" % AkkaVersion,
   "com.typesafe.akka" %% "akka-persistence-typed" % AkkaVersion,
   "com.typesafe.akka" %% "akka-serialization-jackson" % AkkaVersion,
-  clusterSharding,
-  "org.mockito" %% "mockito-scala" % "1.17.5",
+
+  // akka cluster formation
   "com.typesafe.akka" %% "akka-discovery" % AkkaVersion,
   "com.lightbend.akka.management" %% "akka-management-cluster-http" % AkkaManagementVersion,
   "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % AkkaManagementVersion,
   "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % AkkaManagementVersion,
+
+  // akka persistence
   "com.github.dnvriend" %% "akka-persistence-jdbc" % "3.5.2",
   "org.postgresql" % "postgresql" % "9.4-1206-jdbc42",
+
+  // unit testing
+  guice,
+  "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test,
+  //"org.scalatest" %% "scalatest" % "3.1.4" % Test,
+  "org.mockito" %% "mockito-scala" % "1.17.6",
+  "com.typesafe.akka" %% "akka-persistence-testkit" % AkkaVersion % Test
 )
 
 scalacOptions ++= Seq(
   "-Ywarn-unused",
-  "-deprecation"
+  "-deprecation",
+  "Ylog-classpath"
 )
 
 inThisBuild(

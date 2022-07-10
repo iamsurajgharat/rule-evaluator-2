@@ -93,7 +93,7 @@ object RuleActor {
     final case class EvaluateRulesResponse(data:Map[String,List[EvalResult]]) extends MySerializable
 
     // events
-    sealed trait Event
+    sealed trait Event extends MySerializable
     final case class SavedShardRules(rules:List[SRule]) extends Event
     final case class SavedMetadata(mdata:RuleMetadata) extends Event
 
@@ -191,6 +191,8 @@ object RuleActor {
         val tokens = new CommonTokenStream(lexer)
         val parser = new RuleParser(tokens)
         val tree = parser.expr()
-        visitor.visit(tree)
+        val result = visitor.visit(tree)
+        println("SExpression : "+ result.otype)
+        result
     }
 }
