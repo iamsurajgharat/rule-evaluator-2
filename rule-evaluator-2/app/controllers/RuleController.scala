@@ -18,36 +18,34 @@ import scala.util.Try
 import zio.Task
 
 @Singleton
-class RuleController @Inject() (private val ruleService:RuleService, val controllerComponents: ControllerComponents)
+class RuleController @Inject() (private val ruleService: RuleService, val controllerComponents: ControllerComponents)
     extends BaseController {
   import helpers.ZIOHelper._
   import models.web._
 
-  def greet() = Action { _ =>
-    Ok("Hello from Rule Evaluator!")
-  }
+  def greet(): Action[AnyContent] = Action { _ => Ok("Hello from Rule Evaluator!") }
 
   def saveRules(): Action[JsValue] = zioActionWithBody(request => {
-    request.body
-      .validate[List[Rule]]
-      .fold(validateError, req => validateSuccess(req, ruleService.saveRules))
+    request.body.validate[List[Rule]].fold(validateError, req => validateSuccess(req, ruleService.saveRules))
   })
 
   def saveConfigAndMetadata(): Action[JsValue] = zioActionWithBody(request => {
     request.body
       .validate[SaveConfigAndMetadataRequestDTO]
-      .fold(validateError, req => validateSuccess(req, ruleService.saveConfigAndMetadata))
+      .fold(
+        validateError,
+        req => validateSuccess(req, ruleService.saveConfigAndMetadata)
+      )
   })
 
-  def getRules() : Action[JsValue] = zioActionWithBody(request => {
-
+  def getRules(): Action[JsValue] = zioActionWithBody(request => {
     request.body
       .validate[Set[String]]
       .fold(validateError, req => validateSuccess(req, ruleService.getRules))
 
   })
 
-  def evalRules() : Action[JsValue] = zioActionWithBody(request => {
+  def evalRules(): Action[JsValue] = zioActionWithBody(request => {
     request.body
       .validate[EvaluateRulesRequestDTO]
       .fold(validateError, req => validateSuccess(req, ruleService.evalRules))
@@ -55,41 +53,40 @@ class RuleController @Inject() (private val ruleService:RuleService, val control
 
   def deleteRules() = ???
 
-  def zioActionWithBody(actionFun: Request[JsValue] => UIO[Result]): Action[JsValue] = {
+  private def zioActionWithBody(
+      actionFun: Request[JsValue] => UIO[Result]
+  ): Action[JsValue] = {
     Action(parse.json) { request =>
       ((interpret[Result] _) compose actionFun)(request)
     }
   }
 
   private def validateError(
-        errors: scala.collection.Seq[
-          (JsPath, scala.collection.Seq[JsonValidationError])
-        ]
+      errors: scala.collection.Seq[
+        (JsPath, scala.collection.Seq[JsonValidationError])
+      ]
   ): UIO[Result] = {
-      ZIO
-        .fromTry(Try(Json.obj("errors" -> JsError.toJson(errors))))
-        .orElse(ZIO.succeed(Json.obj("errors" -> "Error in parsing input")))
-        .map(BadRequest(_))
-    }
+    ZIO
+      .fromTry(Try(Json.obj("errors" -> JsError.toJson(errors))))
+      .orElse(ZIO.succeed(Json.obj("errors" -> "Error in parsing input")))
+      .map(BadRequest(_))
+  }
 
-  private def validateSuccess[T1,T2 <: BaseDTO](requestData: T1, handler:T1 => Task[T2]): UIO[Result] = {
+  private def validateSuccess[T1, T2 <: BaseDTO](
+      requestData: T1,
+      handler: T1 => Task[T2]
+  ): UIO[Result] = {
     handler(requestData).fold(
-      errors => {
-        println(Console.RED + "Failed!!!" + Console.RESET)
-        InternalServerError(errors.getMessage())
-      },
-      result => {
-        println(Console.GREEN + "Passed!!!" + Console.RESET)
-        Ok(toJson(result))
-      }
+      errors => InternalServerError(errors.getMessage()),
+      result => Ok(toJson(result))
     )
   }
 
-  private def toJson[T <: BaseDTO](data : T) : JsValue = data match {
-        case req : SaveRulesResponseDTO => Json.toJson(req)
-        case res : GetRulesResponseDTO => Json.toJson(res)
-        case res : SaveConfigAndMetadataResponseDTO => Json.toJson(res)
-        case res : EvaluateRulesResponseDTO => Json.toJson(res)
-        case _ => ???
+  private def toJson[T <: BaseDTO](data: T): JsValue = data match {
+    case req: SaveRulesResponseDTO             => Json.toJson(req)
+    case res: GetRulesResponseDTO              => Json.toJson(res)
+    case res: SaveConfigAndMetadataResponseDTO => Json.toJson(res)
+    case res: EvaluateRulesResponseDTO         => Json.toJson(res)
+    case _                                     => ???
   }
 }

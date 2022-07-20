@@ -37,7 +37,7 @@ libraryDependencies ++= Seq(
   guice,
   "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test,
   //"org.scalatest" %% "scalatest" % "3.1.4" % Test,
-  "org.mockito" %% "mockito-scala" % "1.17.6",
+  "org.mockito" %% "mockito-scala-scalatest" % "1.17.6",
   "com.typesafe.akka" %% "akka-persistence-testkit" % AkkaVersion % Test
 )
 
