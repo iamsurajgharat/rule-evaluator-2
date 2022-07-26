@@ -6,6 +6,9 @@ eval $(minikube docker-env)
 **SBT command to create and publish docker image to local docker daemon**
 > docker publishLocal
 
+**SBT command to generate code coverage report**
+> jacoco
+
 **Run the created docker image as container**
 docker run --rm -p 9000:9000 --env APPLICATION_SECRET=abcdefghijklmnopqrstuvwxyz --env RUNTIME_MODE=Local surajgharat/rule-eval-main-service:4
 

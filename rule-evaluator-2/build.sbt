@@ -76,3 +76,6 @@ dockerUpdateLatest := true
 
 // run command settings
 PlayKeys.devSettings += "runtime.mode" -> "Local"
+
+//jacocoIncludes := Seq("**/*")
+//jacocoIncludes ++= Seq("io.github.iamsurajgharat.ruleevaluator/**")
