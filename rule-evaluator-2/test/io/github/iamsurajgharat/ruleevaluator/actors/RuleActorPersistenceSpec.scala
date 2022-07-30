@@ -23,20 +23,27 @@ class RuleActorPersistenceSpec
   with BeforeAndAfterEach
   with LogCapturing {
 
+    import io.github.iamsurajgharat.expressiontree.expressiontree.DataType._
+    val persistenceId = PersistenceId.ofUniqueId("RuleActor|shard-0")
+    val eventSourcedTestKit = EventSourcedBehaviorTestKit[
+                                RuleActor.Command,
+                                RuleActor.Event,
+                                RuleActor.RuleActorData
+                              ](
+                                  system,
+                                  RuleActor("rule-shard-0", persistenceId),
+                                  RuleActorPersistenceSpec.serializationSettings
+                              )
+
+    override protected def beforeEach(): Unit = {
+      super.beforeEach()
+      eventSourcedTestKit.clear()
+    }
+
     "RuleActor" should {
       "persist events" in {
 
-        import io.github.iamsurajgharat.expressiontree.expressiontree.DataType._
-        val persistenceId = PersistenceId.ofUniqueId("RuleActor|shard-0")
-        val eventSourcedTestKit = EventSourcedBehaviorTestKit[
-                                    RuleActor.Command,
-                                    RuleActor.Event,
-                                    RuleActor.RuleActorData
-                                  ](
-                                      system,
-                                      RuleActor("rule-shard-0", persistenceId),
-                                      RuleActorPersistenceSpec.serializationSettings
-                                  )
+        
         // rule to save
         val rule = Rule("id-1", "A > B", "id-1")
         val ruleMetadata = RuleMetadata(Map("A" -> Number, "B" -> Number))
