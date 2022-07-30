@@ -8,11 +8,9 @@ import com.google.inject.ImplementedBy
 import javax.inject.Inject
 
 @ImplementedBy(classOf[ActorSystemServiceImpl])
-trait ActorSystemService{
-    val ruleManagerActor : ActorRef[RuleManagerActor.Command]
+trait ActorSystemService {
+  val ruleManagerActor: ActorRef[RuleManagerActor.Command]
 }
 
-class ActorSystemServiceImpl @Inject()(val ruleManagerActor:ActorRef[RuleManagerActor.Command]) extends ActorSystemService {
-}
-
-
+class ActorSystemServiceImpl @Inject() (val ruleManagerActor: ActorRef[RuleManagerActor.Command])
+    extends ActorSystemService {}
