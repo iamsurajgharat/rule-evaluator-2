@@ -8,25 +8,25 @@ import com.google.inject.ImplementedBy
 import zio.ZIO
 import java.util.concurrent.TimeUnit
 import io.github.iamsurajgharat.ruleevaluator.actors.RuleManagerActor
-import io.github.iamsurajgharat.ruleevaluator.models.web.SaveRulesResponseDTO
 import javax.inject.Inject
-import io.github.iamsurajgharat.ruleevaluator.models.web.GetRulesResponseDTO
-import io.github.iamsurajgharat.ruleevaluator.models.web.EvaluateRulesResponseDTO
-import io.github.iamsurajgharat.ruleevaluator.models.web.EvaluateRulesRequestDTO
-import io.github.iamsurajgharat.ruleevaluator.models.web.SaveConfigAndMetadataRequestDTO
-import io.github.iamsurajgharat.ruleevaluator.models.web.SaveConfigAndMetadataResponseDTO
+import io.github.iamsurajgharat.ruleevaluator.models.web._
 
 @ImplementedBy(classOf[RuleServiceImpl])
 trait RuleService {
-    def saveRules(rules:List[Rule]):Task[SaveRulesResponseDTO]
-    def getRules(ids: Set[String]): Task[GetRulesResponseDTO]
-    def evalRules(request: EvaluateRulesRequestDTO): Task[EvaluateRulesResponseDTO]
-    def saveConfigAndMetadata(request:SaveConfigAndMetadataRequestDTO) : Task[SaveConfigAndMetadataResponseDTO]
+  def saveRules(rules: List[Rule]): Task[SaveRulesResponseDTO]
+  def getRules(ids: Set[String]): Task[GetRulesResponseDTO]
+  def evalRules(request: EvaluateRulesRequestDTO): Task[EvaluateRulesResponseDTO]
+  def saveConfigAndMetadata(request: SaveConfigAndMetadataRequestDTO): Task[SaveConfigAndMetadataResponseDTO]
 }
 
-class RuleServiceImpl @Inject()(
-  private val actorSystemService: ActorSystemService,
-  private implicit val scheduler:akka.actor.typed.Scheduler) extends RuleService{
+class RuleServiceImpl @Inject() (
+    private val actorSystemService: ActorSystemService,
+    private implicit val scheduler: akka.actor.typed.Scheduler
+) extends RuleService {
+
+  import akka.actor.typed.scaladsl.AskPattern._
+  import akka.util.Timeout
+  implicit val timeout: Timeout = Timeout(3, TimeUnit.SECONDS)
 
   private val ruleManagerActor = actorSystemService.ruleManagerActor
   private var saveReqCnt = 0L;
@@ -37,26 +37,18 @@ class RuleServiceImpl @Inject()(
     saveReqCnt = saveReqCnt + 1;
 
     ZIO.fromFuture(implicit ec => {
-      import akka.actor.typed.scaladsl.AskPattern._
-      import akka.util.Timeout
-      implicit val timeout: Timeout = Timeout(3, TimeUnit.SECONDS)
-
       ruleManagerActor
         .ask(replyTo => RuleManagerActor.SaveRulesRequest(saveReqCnt.toString(), rules, replyTo))
         .map(r => SaveRulesResponseDTO(r.sucessIds, r.errors))
     })
   }
 
-  override def saveConfigAndMetadata(request:SaveConfigAndMetadataRequestDTO): Task[SaveConfigAndMetadataResponseDTO] = {
+  override def saveConfigAndMetadata(
+      request: SaveConfigAndMetadataRequestDTO
+  ): Task[SaveConfigAndMetadataResponseDTO] = {
     saveMetaReqCnt = saveMetaReqCnt + 1;
 
     ZIO.fromFuture(implicit ec => {
-      import akka.actor.typed.scaladsl.AskPattern._
-      import akka.util.Timeout
-      implicit val timeout: Timeout = Timeout(3, TimeUnit.SECONDS)
-
-      println("Sending save-metadata msg to manager")
-
       ruleManagerActor
         .ask(replyTo => RuleManagerActor.SaveMetadataRequest(saveMetaReqCnt.toString(), request.metadata, replyTo))
         .map(r => SaveConfigAndMetadataResponseDTO(r.metadata))
@@ -67,10 +59,6 @@ class RuleServiceImpl @Inject()(
     getReqCnt = getReqCnt + 1;
 
     ZIO.fromFuture(implicit ec => {
-      import akka.actor.typed.scaladsl.AskPattern._
-      import akka.util.Timeout
-      implicit val timeout: Timeout = Timeout(3, TimeUnit.SECONDS)
-
       ruleManagerActor
         .ask(replyTo => RuleManagerActor.GetRulesRequest(getReqCnt.toString(), ids, replyTo))
         .map(x => GetRulesResponseDTO(x.data))
@@ -81,12 +69,11 @@ class RuleServiceImpl @Inject()(
     evalReqCnt = evalReqCnt + 1;
 
     ZIO.fromFuture(implicit ec => {
-      import akka.actor.typed.scaladsl.AskPattern._
-      import akka.util.Timeout
-      implicit val timeout: Timeout = Timeout(3, TimeUnit.SECONDS)
 
       ruleManagerActor
-        .ask(replyTo => RuleManagerActor.EvaluateRulesRequest(evalReqCnt.toString(), request.context, request.records, replyTo))
+        .ask(replyTo =>
+          RuleManagerActor.EvaluateRulesRequest(evalReqCnt.toString(), request.context, request.records, replyTo)
+        )
         .map(x => EvaluateRulesResponseDTO(x.data))
     })
   }

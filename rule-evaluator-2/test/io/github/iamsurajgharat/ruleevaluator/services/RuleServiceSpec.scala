@@ -17,6 +17,10 @@ import org.mockito.IdiomaticMockito._
 import helpers.ZIOHelper._
 import io.github.iamsurajgharat.ruleevaluator.models.web.SaveRulesResponseDTO
 import java.util.concurrent.TimeoutException
+import io.github.iamsurajgharat.expressiontree.expressiontree.DataType
+import io.github.iamsurajgharat.ruleevaluator.models.web.RuleMetadata
+import io.github.iamsurajgharat.ruleevaluator.models.web.SaveConfigAndMetadataRequestDTO
+import io.github.iamsurajgharat.ruleevaluator.models.web.SaveConfigAndMetadataResponseDTO
 
 class RuleServiceSpec
     extends PlaySpec
@@ -65,6 +69,7 @@ class RuleServiceSpec
 
       // mock result data
       val ruleManagerActorBehaviour = Behaviors.receiveMessage[RuleManagerActor.Command] { _ =>
+        // do not reply to message to produce the TimeoutException 
         Behaviors.same
       }
 
@@ -76,7 +81,69 @@ class RuleServiceSpec
       val subject = new RuleServiceImpl(actorSystemServiceMock, testKit.scheduler)
 
       // act and assert
-      an [TimeoutException] should be thrownBy interpret(subject.saveRules(rules))
+      an [TimeoutException] must be thrownBy interpret(subject.saveRules(rules))
+    }
+
+    "send correct counter in RuleManagerActor message" in {
+      // arrange
+      val rules = List(Rule("r-1", "A > B", "r-1"))
+
+      var capturedCounter : Option[String] = None
+      // mock result data
+      val ruleManagerActorBehaviour = Behaviors.receiveMessage[RuleManagerActor.Command] { msg =>
+        msg match {
+          case SaveRulesRequest(cmdId, _, replyTo) =>
+            capturedCounter = Some(cmdId)
+            replyTo ! RuleManagerActor.SaveRulesResponse(List("r-1"), Map.empty[String, String])
+          case _ => ???
+        }
+        Behaviors.same
+      }
+
+      val ruleManagerActorProbe = testKit.createTestProbe[RuleManagerActor.Command]()
+      val ruleManagerActor = testKit.spawn(Behaviors.monitor(ruleManagerActorProbe.ref, ruleManagerActorBehaviour))
+
+      
+      actorSystemServiceMock.ruleManagerActor returns ruleManagerActor
+      val subject = new RuleServiceImpl(actorSystemServiceMock, testKit.scheduler)
+
+      // act - 2 times
+      interpret(subject.saveRules(rules))
+      interpret(subject.saveRules(rules))
+
+      // assert
+      capturedCounter mustBe Some("2")
+    }
+  }
+
+  "saveConfigAndMetadata" must {
+    "return success response for valid input" in {
+      // arrange
+      val metadata = RuleMetadata(Map("A" -> DataType.Number, "B" -> DataType.Number))
+      val request = SaveConfigAndMetadataRequestDTO(metadata)
+
+      // mock result data
+      val ruleManagerActorBehaviour = Behaviors.receiveMessage[RuleManagerActor.Command] { msg =>
+        msg match {
+          case RuleManagerActor.SaveMetadataRequest(_, _, replyTo) =>
+            replyTo ! RuleManagerActor.SaveMetadataResponse(metadata)
+          case _ => ???
+        }
+        Behaviors.same
+      }
+
+      val ruleManagerActorProbe = testKit.createTestProbe[RuleManagerActor.Command]()
+      val ruleManagerActor = testKit.spawn(Behaviors.monitor(ruleManagerActorProbe.ref, ruleManagerActorBehaviour))
+
+      
+      actorSystemServiceMock.ruleManagerActor returns ruleManagerActor
+      val subject = new RuleServiceImpl(actorSystemServiceMock, testKit.scheduler)
+
+      // act
+      val result = subject.saveConfigAndMetadata(request)
+
+      // assert
+      interpret(result) mustBe SaveConfigAndMetadataResponseDTO(metadata)
     }
   }
 
