@@ -15,12 +15,10 @@ import akka.actor.typed.scaladsl.Behaviors
 import io.github.iamsurajgharat.ruleevaluator.actors.RuleManagerActor.SaveRulesRequest
 import org.mockito.IdiomaticMockito._
 import helpers.ZIOHelper._
-import io.github.iamsurajgharat.ruleevaluator.models.web.SaveRulesResponseDTO
+import io.github.iamsurajgharat.ruleevaluator.models.web._
 import java.util.concurrent.TimeoutException
-import io.github.iamsurajgharat.expressiontree.expressiontree.DataType
-import io.github.iamsurajgharat.ruleevaluator.models.web.RuleMetadata
-import io.github.iamsurajgharat.ruleevaluator.models.web.SaveConfigAndMetadataRequestDTO
-import io.github.iamsurajgharat.ruleevaluator.models.web.SaveConfigAndMetadataResponseDTO
+import io.github.iamsurajgharat.expressiontree.expressiontree._
+import io.github.iamsurajgharat.ruleevaluator.models.domain.EvalResult
 
 class RuleServiceSpec
     extends PlaySpec
@@ -32,7 +30,7 @@ class RuleServiceSpec
 
   val testKit = ActorTestKit()
   val actorSystemServiceMock = mock[ActorSystemService]
-  //val subject = new RuleServiceImpl(actorSystemServiceMock, testKit.scheduler)
+  // val subject = new RuleServiceImpl(actorSystemServiceMock, testKit.scheduler)
 
   "saveRules" must {
     "return success response for valid input" in {
@@ -52,7 +50,6 @@ class RuleServiceSpec
       val ruleManagerActorProbe = testKit.createTestProbe[RuleManagerActor.Command]()
       val ruleManagerActor = testKit.spawn(Behaviors.monitor(ruleManagerActorProbe.ref, ruleManagerActorBehaviour))
 
-      
       actorSystemServiceMock.ruleManagerActor returns ruleManagerActor
       val subject = new RuleServiceImpl(actorSystemServiceMock, testKit.scheduler)
 
@@ -60,7 +57,7 @@ class RuleServiceSpec
       val result = subject.saveRules(rules)
 
       // assert
-      interpret(result) mustBe SaveRulesResponseDTO(List("r-1"), Map.empty[String,String])
+      interpret(result) mustBe SaveRulesResponseDTO(List("r-1"), Map.empty[String, String])
     }
 
     "throw TimeoutException when actor does not respond" in {
@@ -69,26 +66,25 @@ class RuleServiceSpec
 
       // mock result data
       val ruleManagerActorBehaviour = Behaviors.receiveMessage[RuleManagerActor.Command] { _ =>
-        // do not reply to message to produce the TimeoutException 
+        // do not reply to message to produce the TimeoutException
         Behaviors.same
       }
 
       val ruleManagerActorProbe = testKit.createTestProbe[RuleManagerActor.Command]()
       val ruleManagerActor = testKit.spawn(Behaviors.monitor(ruleManagerActorProbe.ref, ruleManagerActorBehaviour))
 
-      
       actorSystemServiceMock.ruleManagerActor returns ruleManagerActor
       val subject = new RuleServiceImpl(actorSystemServiceMock, testKit.scheduler)
 
       // act and assert
-      an [TimeoutException] must be thrownBy interpret(subject.saveRules(rules))
+      an[TimeoutException] must be thrownBy interpret(subject.saveRules(rules))
     }
 
     "send correct counter in RuleManagerActor message" in {
       // arrange
       val rules = List(Rule("r-1", "A > B", "r-1"))
 
-      var capturedCounter : Option[String] = None
+      var capturedCounter: Option[String] = None
       // mock result data
       val ruleManagerActorBehaviour = Behaviors.receiveMessage[RuleManagerActor.Command] { msg =>
         msg match {
@@ -103,7 +99,6 @@ class RuleServiceSpec
       val ruleManagerActorProbe = testKit.createTestProbe[RuleManagerActor.Command]()
       val ruleManagerActor = testKit.spawn(Behaviors.monitor(ruleManagerActorProbe.ref, ruleManagerActorBehaviour))
 
-      
       actorSystemServiceMock.ruleManagerActor returns ruleManagerActor
       val subject = new RuleServiceImpl(actorSystemServiceMock, testKit.scheduler)
 
@@ -132,12 +127,7 @@ class RuleServiceSpec
         Behaviors.same
       }
 
-      val ruleManagerActorProbe = testKit.createTestProbe[RuleManagerActor.Command]()
-      val ruleManagerActor = testKit.spawn(Behaviors.monitor(ruleManagerActorProbe.ref, ruleManagerActorBehaviour))
-
-      
-      actorSystemServiceMock.ruleManagerActor returns ruleManagerActor
-      val subject = new RuleServiceImpl(actorSystemServiceMock, testKit.scheduler)
+      val subject = createTestSubject(ruleManagerActorBehaviour)
 
       // act
       val result = subject.saveConfigAndMetadata(request)
@@ -145,6 +135,69 @@ class RuleServiceSpec
       // assert
       interpret(result) mustBe SaveConfigAndMetadataResponseDTO(metadata)
     }
+  }
+
+  "getRules" must {
+    "return success response for valid input" in {
+      // arrange
+      val request = Set("rule-1", "rule-2")
+      val response = List(Rule("rule-1", "A > B", "result-1"))
+
+      // mock result data
+      val ruleManagerActorBehaviour = Behaviors.receiveMessage[RuleManagerActor.Command] { msg =>
+        msg match {
+          case RuleManagerActor.GetRulesRequest(_, _, replyTo) =>
+            replyTo ! RuleManagerActor.GetRulesResponse(response)
+          case _ => ???
+        }
+        Behaviors.same
+      }
+
+      val subject = createTestSubject(ruleManagerActorBehaviour)
+
+      // act
+      val result = interpret(subject.getRules(request))
+
+      // assert
+      result mustBe GetRulesResponseDTO(response)
+    }
+  }
+
+  "evalRules" must {
+    "return success response for valid input" in {
+      // arrange
+      val records = List(new RecordImpl(Map("field1" -> RText("Value1"))))
+      val request = EvaluateRulesRequestDTO(None, records)
+      val response = Map("record-1" -> List(EvalResult(true, "rule-1", "")))
+
+      // mock result data
+      val ruleManagerActorBehaviour = Behaviors.receiveMessage[RuleManagerActor.Command] { msg =>
+        msg match {
+          case RuleManagerActor.EvaluateRulesRequest(_, _, _, replyTo) =>
+            replyTo ! RuleManagerActor.EvaluateRulesResponse(response)
+          case _ => ???
+        }
+        Behaviors.same
+      }
+
+      val subject = createTestSubject(ruleManagerActorBehaviour)
+
+      // act
+      val result = interpret(subject.evalRules(request))
+
+      // assert
+      result mustBe EvaluateRulesResponseDTO(response)
+    }
+  }
+
+  private def createTestSubject(
+      ruleManagerActorBehaviour: Behaviors.Receive[RuleManagerActor.Command]
+  ): RuleServiceImpl = {
+    val ruleManagerActorProbe = testKit.createTestProbe[RuleManagerActor.Command]()
+    val ruleManagerActor = testKit.spawn(Behaviors.monitor(ruleManagerActorProbe.ref, ruleManagerActorBehaviour))
+    actorSystemServiceMock.ruleManagerActor returns ruleManagerActor
+
+    return new RuleServiceImpl(actorSystemServiceMock, testKit.scheduler)
   }
 
   override def afterAll(): Unit = testKit.shutdownTestKit()
